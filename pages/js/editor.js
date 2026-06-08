@@ -147,6 +147,7 @@
         const textEditorControls = document.getElementById('text-editor-controls');
 
         const isTextMode = modeToggle.checked;
+        const wasInTextMode = mainEl.contentEditable === 'true';
 
         if (isTextMode) {
             // --- Enable Text Editor Mode ---
@@ -167,6 +168,16 @@
             mainEl.focus();
         } else {
             // --- Disable Text Editor Mode (Return to AI/View) ---
+            if (wasInTextMode) {
+                if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
+                    window.location.reload(); // Discard changes and reset state.
+                } else {
+                    // User doesn't want to cancel, so revert the toggle to stay in text mode.
+                    modeToggle.checked = true;
+                }
+                return; // Stop further execution.
+            }
+
             if (aiEditorControls) aiEditorControls.style.display = 'flex';
             if (textEditorControls) textEditorControls.style.display = 'none';
 
@@ -234,8 +245,6 @@
      */
     function cancelTextChanges() {
         if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
-            document.getElementById('mode-toggle').checked = false;
-            setEditorMode();
             window.location.reload(); // Reload to discard changes
         }
     }
