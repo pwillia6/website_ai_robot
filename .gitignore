@@ -3,3 +3,4 @@ etc/gemini.json
 etc/certificates
 *DS_Store*
 var
+bin
