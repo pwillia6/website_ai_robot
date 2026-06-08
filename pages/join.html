@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="data-source" content="data/self_grade.json">
+    <title>Join Us | Amateur Chamber Music Society (ACMS) Australia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-config.js"></script>
+    <!-- Google Fonts: Merriweather for Serif & Inter for Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- TOP HEADER: Premium Dark Green-Charcoal Background for Logo & Navigation -->
+    <header class="bg-[#080d0a] text-white border-b border-brandGreen-950 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand / Logo Area with Rich Dark Background -->
+                <a href="index.html" class="relative cursor-pointer">
+                    <img src="images/logo-notext.png" alt="ACMS Logo" class="h-16 mb-[5px]">
+                    <div class="absolute top-[62%] left-[74%] whitespace-nowrap">
+                        <span class="text-[9px] uppercase tracking-widest text-white font-bold block leading-tight">Amateur Chamber<br>Music Society</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Menu -->
+                <nav class="hidden lg:flex space-x-1">
+                    <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="home">Home</a>
+                    <a href="about.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="about">About Us</a>
+                    <a href="playing-days.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="playing">Playing Days</a>
+                    <a href="music-camp.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="camp">Music Camp</a>
+                    <a href="concerts.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="concerts">Concerts</a>
+                    <a href="library.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="library">Music Library</a>
+                    <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="nav-btn px-3 py-2 bg-brandTeal-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandTeal-600 hover:shadow-md ml-2">Members Area</a>
+                    <a href="join.html" class="nav-btn px-3 py-2 bg-brandGreen-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandGreen-600 hover:shadow-md" data-tab="join">Join / Self-Grader</a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button id="mobile-menu-toggle" class="text-stone-300 hover:text-white focus:outline-none focus:text-white p-2" aria-label="Toggle Menu">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Navigation Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-stone-950 border-t border-stone-850 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            <a href="index.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="home">Home</a>
+            <a href="about.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="about">About Us & History</a>
+            <a href="playing-days.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="playing">Playing Days & Pianists Guide</a>
+            <a href="music-camp.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="camp">Residential Camp</a>
+            <a href="concerts.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="concerts">Concerts & Performance Advice</a>
+            <a href="library.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="library">Music Library Catalog</a>
+            <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandTeal-800 text-white rounded-md text-base font-semibold tracking-wide">Members Area</a>
+            <a href="join.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandGreen-800 text-brandTeal-300 rounded-md text-base font-semibold tracking-wide" data-tab="join">Join Us &amp; Self-Grader</a>
+        </div>
+    </header>
+
+    <!-- MAIN APP CANVAS CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== JOIN US / SELF GRADER TAB ==================== -->
+        <section class="space-y-12">
+            <!-- Split section -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Self Grader Diagnostics -->
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="bg-white p-6 sm:p-10 rounded-2xl border border-stone-200 shadow-sm space-y-6">
+                        <div>
+                            <span class="text-xs font-bold text-brandGreen-700 tracking-wider uppercase block">Instrument Assessment</span>
+                            <h3 class="text-2xl sm:text-3xl font-serif font-bold text-stone-900 mt-1">Interactive Self-Grader</h3>
+                            <p class="text-stone-500 text-xs sm:text-sm leading-relaxed mt-2">
+                                ACMS groups players of similar standards at Playing Days to ensure satisfying ensembles. Take our diagnostic grader below to establish your recommended level.
+                            </p>
+                        </div>
+
+                        <!-- Self Grader Dynamic form -->
+                        <div class="space-y-6 border-t border-stone-100 pt-6" id="grader-app">
+                            <!-- Step 0: About Text -->
+                            <div id="grader-step-about">
+                                <h3 class="text-xl font-serif font-bold text-stone-900">About Self-Grading</h3>
+                                <div class="text-xs text-stone-600 space-y-3 leading-relaxed mt-4">
+                                    <p>You will be shown a list of pieces for your chosen instrument. The list is not exhaustive; in each case these have been selected from a large repertoire. These are not in any sense "test" pieces and there is no requirement to be able to play these to join the Society. Finally, this is an assessment of basic reading ability, not overall musicianship.</p>
+                                    <p>There will be excerpts from each piece so that you can view the piece and decide whether you would be able to play it. You should indicate whether you could play it immediately, whether you would need a few days notice so that you could practise the piece, or whether you feel that it is too advanced for you to play. Once you have made a choice for each piece, click the "Assess" button to view your grade.</p>
+                                    <p class="font-bold">You should respond for <strong>ALL</strong> pieces in each grade category. If you do not select an option then "Not within a week" will be assumed!</p>
+                                </div>
+                                <div class="pt-6 mt-6 border-t border-stone-200 space-y-4 text-xs text-stone-600 leading-relaxed">
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">Before You Start</h4>
+                                        <p class="mt-1">Remember that self-grading is not a hard and fast science. Everyone's interpretation of the questionnaire will be personal to some extent. You may like to consider the following explanations, which might help to clarify things for you.</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">What does "At Sight" mean?</h4>
+                                        <p class="mt-1">It means that if someone put that piece or one of a similar standard in front of you, you would be able to play it as part of a group. You would not be expected to get all the notes right, but you would expect that the group would be able to play through without stopping.</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">What does "3-5 days notice" mean?</h4>
+                                        <p class="mt-1">It means that if someone asked you to play the piece or one of a similar standard, you would need a few days' notice so that you could have a look at it, play it through a few times, go over some harder passages and work out how to play them. It does not expect that you would be note perfect, just that the group would be able to play through the piece without stopping. If some notes are dropped but the group stays together that is fine.</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">What does "Not within a week" mean?</h4>
+                                        <p class="mt-1">Simply that you would need to do some serious work on the piece to be able to have a chance at playing it with a group.</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">What is the Descriptive Self Grader?</h4>
+                                        <p class="mt-1">If you prefer a more descriptive guide over assessing individual music pieces, the Descriptive Self Grader allows you to select a level based on written descriptions of playing ability. You can access it via the button below.</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-stone-800 text-sm">I don't think I got my grading right, can I do it again?</h4>
+                                        <p class="mt-1">Yes, of course. After you get your result, you can click the "Retake Test" button to start over.</p>
+                                    </div>
+                                </div>
+                                <div class="text-center pt-6 flex flex-col sm:flex-row justify-center gap-3">
+                                    <button id="grader-proceed-btn" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-6 py-2 rounded-md text-sm">Proceed</button>
+                                    <a href="descriptive-grader.html" class="bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold px-6 py-2 rounded-md text-sm">Use Descriptive Grader</a>
+                                </div>
+                            </div>
+
+                            <!-- Step 1 & 2: The Grader Form (hidden initially) -->
+                            <div id="grader-step-form" class="hidden space-y-6">
+                                <div class="space-y-2">
+                                    <label for="instrument-select" class="block text-stone-700 font-semibold text-sm">Step 1: Select Your Instrument</label>
+                                    <select id="instrument-select" class="w-full sm:w-1/2 border border-stone-300 rounded-lg p-2.5 focus:ring-1 focus:ring-brandGreen-500 outline-none text-sm">
+                                        <option value="-1">-- Please select --</option>
+                                        <option value="1">Violin</option>
+                                        <option value="2">Viola</option>
+                                        <option value="3">Cello</option>
+                                        <option value="5">Piano</option>
+                                        <option value="6">Flute</option>
+                                        <option value="7">Oboe</option>
+                                        <option value="8">Clarinet</option>
+                                        <option value="9">French Horn</option>
+                                        <option value="10">Bassoon</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="grader-form-container" class="space-y-8">
+                                    <!-- Dynamic content will be injected here by js/join.js -->
+                                </div>
+
+                                <div class="pt-6 flex flex-col sm:flex-row justify-center gap-3">
+                                    <button id="grader-back-btn" class="bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold px-6 py-2 rounded-md text-sm">Cancel</button>
+                                    <button id="grader-assess-btn" class="hidden w-full sm:w-auto bg-brandGreen-700 hover:bg-brandGreen-800 text-white font-semibold py-3 px-8 rounded-lg text-center tracking-wide shadow transition duration-150">
+                                        Assess My Grade
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Registration Tier Simulator -->
+                <div class="lg:col-span-5 space-y-6">
+                    <div class="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200 shadow-sm space-y-8">
+                        <div>
+                            <h3 class="text-xl font-serif font-bold text-stone-900">Membership Fees</h3>
+                            <p class="text-stone-500 text-xs mt-1">The first one-day playing event for new members is included in the membership fee.</p>
+                            <div class="overflow-x-auto rounded-lg border border-stone-200 mt-4">
+                                <table class="w-full text-left border-collapse text-sm">
+                                    <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wider">
+                                        <tr>
+                                            <th class="p-3 border-b">Tier</th>
+                                            <th class="p-3 border-b text-center">1 Year</th>
+                                            <th class="p-3 border-b text-center">3 Years</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-stone-150">
+                                        <tr>
+                                            <td class="p-3 font-semibold text-stone-800">Individual</td>
+                                            <td class="p-3 text-center">$28</td>
+                                            <td class="p-3 text-center">$84</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-3 font-semibold text-stone-800">Full-Time Student</td>
+                                            <td class="p-3 text-center">$23</td>
+                                            <td class="p-3 text-center text-stone-400">Not available</td>
+                                        </tr>
+                                        <tr>
+                                            <td class="p-3 font-semibold text-stone-800">Centrelink Pensioner</td>
+                                            <td class="p-3 text-center">$23</td>
+                                            <td class="p-3 text-center">$69</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="border-t border-stone-100 pt-8">
+                            <h3 class="text-xl font-serif font-bold text-stone-900">How to Join</h3>
+                            <ol class="list-decimal list-inside space-y-6 text-sm text-stone-600 mt-4">
+                                <li>
+                                    Complete the online registration form. Fill in your details, including your own choice of username and password, then submit your request for membership.
+                                    <a href="https://www.acms-australia.org/admidio/adm_program/modules/profile/profile_new.php?new_user=2" target="_blank" class="mt-3 inline-block w-full text-center bg-brandGreen-700 hover:bg-brandGreen-800 text-white font-semibold py-3 px-6 rounded-lg shadow transition duration-150">
+                                        Go to Members Area Registration
+                                    </a>
+                                </li>
+                                <li>
+                                    Once you submit, a Payment Options screen will appear. Please make your payment by direct credit to the ACMS Bank Account.
+                                    <div class="mt-3 bg-brandGreen-50/50 p-4 rounded-xl border border-brandGreen-100 space-y-3 text-xs">
+                                        <strong class="text-brandGreen-900 block">EFT Bank Transfer Details:</strong>
+                                        <div class="space-y-1 text-stone-600">
+                                            <div class="flex justify-between"><span>Account Name:</span> <span class="font-semibold text-stone-900">Amateur Chamber Music Society</span></div>
+                                            <div class="flex justify-between"><span>BSB Branch:</span> <span class="font-semibold text-stone-900">032-101</span></div>
+                                            <div class="flex justify-between"><span>Account Number:</span> <span class="font-semibold text-stone-900">139251</span></div>
+                                            <div class="flex justify-between"><span>EFT Reference:</span> <span class="font-semibold text-stone-900">[Your Name] Memb</span></div>
+                                        </div>
+                                    </div>
+                                </li>
+                                <li>
+                                    Once your payment has been received (this may take a few days), you will receive an email from the new member support team approving your membership.
+                                </li>
+                            </ol>
+                        </div>
+                        <div class="border-t border-stone-100 pt-8">
+                            <h3 class="text-xl font-serif font-bold text-stone-900">Membership Renewal</h3>
+                            <div class="text-sm text-stone-600 space-y-3 mt-4">
+                                <p>
+                                    Please renew your membership by direct credit to ACMS Bank Account as per "Membership Fees".
+                                </p>
+                                <p>
+                                    <strong>Bank Reference:</strong> Use your Name followed by code <code class="text-xs font-semibold bg-stone-100 text-stone-700 px-1.5 py-1 rounded-md">Memb</code>.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Modal -->
+        <div id="grader-results-modal" class="hidden fixed inset-0 bg-black/60 z-[101] items-center justify-center p-4">
+            <div class="bg-white rounded-lg shadow-2xl w-full max-w-lg p-6 sm:p-8 space-y-4 text-center">
+                <h3 class="text-xl font-serif font-bold text-stone-900">Assessment Complete</h3>
+                <div id="sg-result-container" class="text-stone-700">
+                    <!-- Result text injected here -->
+                </div>
+                <div class="pt-2 flex justify-center gap-3">
+                    <button id="grader-results-close" class="bg-stone-200 hover:bg-stone-300 text-stone-800 font-semibold px-6 py-2 rounded-md text-sm">Retake Test</button>
+                    <button id="grader-apply-btn" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-6 py-2 rounded-md text-sm">Apply to Registration</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FLOATING POPUP NOTIFICATION (Replacement for Browser Alerts) -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-stone-850 max-w-sm z-50 flex items-start space-x-3 transition duration-300">
+        <div class="bg-stone-800 text-brandGreen-400 p-1.5 rounded-lg text-sm" id="toast-icon">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="space-y-1">
+            <strong class="text-xs font-serif block text-white" id="toast-title">Notification</strong>
+            <p class="text-stone-300 text-[11px] leading-relaxed" id="toast-body">Message context goes here.</p>
+        </div>
+    </div>
+
+    <!-- PRE-FOOTER MAP ACCENT -->
+    <section class="bg-[#080d0a] text-stone-400 py-12 border-t border-brandGreen-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Contact Us</span>
+                <p>We are always eager to assist with chamber arrangements, library borrowings, or new membership approvals.</p>
+                <div class="space-y-2 text-stone-300">
+                    <p><i class="fa-solid fa-envelope mr-1.5 text-brandGreen-400"></i> <a href="mailto:patsy.short@acms-australia.org" class="hover:underline">patsy.short@acms-australia.org</a></p>
+                    <p><i class="fa-solid fa-phone mr-1.5 text-brandGreen-400"></i> <a href="tel:0423293728" class="hover:underline">0423 293 728</a></p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">National Branches</span>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Sydney Metropolitan Branch</li>
+                    <li>&bull; Blue Mountains Sub-Branch</li>
+                    <li>&bull; Brisbane playing days (Somerville House)</li>
+                    <li>&bull; Canberra ACT branch (ANU School of Music)</li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Associated Bodies</span>
+                <p>Looking for musical groupings outside of our core regional hubs? Check our affiliated state societies:</p>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Adelaide: <a href="http://www.chambermusicsa.org/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">ACMPSA</a></li>
+                    <li>&bull; Melbourne: <a href="http://vacms.weebly.com/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">VACMS</a></li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Digital Channels</span>
+                <p>Join our interactive community forums, stream past concert archives, or watch tutorials on our YouTube network.</p>
+                <div class="flex gap-4 text-stone-300 text-lg">
+                    <a href="https://www.youtube.com/@ACMSMusic" target="_blank" class="hover:text-red-500 transition"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.facebook.com/pages/Amateur-Chamber-Music-Society/191500364316" target="_blank" class="hover:text-blue-500 transition"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-stone-500 text-xs py-6 border-t border-stone-900 text-center">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 Amateur Chamber Music Society Incorporated (ACMS). All rights reserved.</p>
+            <div class="space-x-4">
+                <a href="https://www.acms-australia.org/download_file/view/496/246" class="hover:underline">ACMS Constitution</a>
+                <span>&bull;</span>
+                <span class="text-stone-600">Built for amateur chamber music development</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== LOGIC / JS CONTROLLERS ==================== -->
+    <script src="js/main.js"></script>
+    <script src="js/self-grader.js"></script>
+    <script src="js/editor.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const graderProceedBtn = document.getElementById('grader-proceed-btn');
+            const graderBackBtn = document.getElementById('grader-back-btn');
+            const graderStepAbout = document.getElementById('grader-step-about');
+            const graderStepForm = document.getElementById('grader-step-form');
+            const instrumentSelect = document.getElementById('instrument-select');
+            const graderFormContainer = document.getElementById('grader-form-container');
+            const graderAssessBtn = document.getElementById('grader-assess-btn');
+
+            if (graderProceedBtn && graderStepAbout && graderStepForm) {
+                graderProceedBtn.addEventListener('click', function() {
+                    graderStepAbout.classList.add('hidden');
+                    graderStepForm.classList.remove('hidden');
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                });
+            }
+
+            if (graderBackBtn && graderStepAbout && graderStepForm) {
+                graderBackBtn.addEventListener('click', function() {
+                    graderStepForm.classList.add('hidden');
+                    graderStepAbout.classList.remove('hidden');
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
+                    // Reset form state when going back
+                    if (instrumentSelect) instrumentSelect.value = '-1';
+                    if (graderFormContainer) graderFormContainer.innerHTML = '';
+                    if (graderAssessBtn) graderAssessBtn.classList.add('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

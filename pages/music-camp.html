@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music Camp | Amateur Chamber Music Society (ACMS) Australia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-config.js"></script>
+    <!-- Google Fonts: Merriweather for Serif & Inter for Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="data-source" content="data/music-camp-data.json">
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- TOP HEADER: Premium Dark Green-Charcoal Background for Logo & Navigation -->
+    <header class="bg-[#080d0a] text-white border-b border-brandGreen-950 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand / Logo Area with Rich Dark Background -->
+                <a href="index.html" class="relative cursor-pointer">
+                    <img src="images/logo-notext.png" alt="ACMS Logo" class="h-16 mb-[5px]">
+                    <div class="absolute top-[62%] left-[74%] whitespace-nowrap">
+                        <span class="text-[9px] uppercase tracking-widest text-white font-bold block leading-tight">Amateur Chamber<br>Music Society</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Menu -->
+                <nav class="hidden lg:flex space-x-1">
+                    <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="home">Home</a>
+                    <a href="about.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="about">About Us</a>
+                    <a href="playing-days.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="playing">Playing Days</a>
+                    <a href="music-camp.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="camp">Music Camp</a>
+                    <a href="concerts.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="concerts">Concerts</a>
+                    <a href="library.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="library">Music Library</a>
+                    <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="nav-btn px-3 py-2 bg-brandTeal-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandTeal-600 hover:shadow-md ml-2">Members Area</a>
+                    <a href="join.html" class="nav-btn px-3 py-2 bg-brandGreen-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandGreen-600 hover:shadow-md" data-tab="join">Join / Self-Grader</a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button id="mobile-menu-toggle" class="text-stone-300 hover:text-white focus:outline-none focus:text-white p-2" aria-label="Toggle Menu">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Navigation Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-stone-950 border-t border-stone-850 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            <a href="index.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="home">Home</a>
+            <a href="about.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="about">About Us & History</a>
+            <a href="playing-days.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="playing">Playing Days & Pianists Guide</a>
+            <a href="music-camp.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="camp">Residential Camp</a>
+            <a href="concerts.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="concerts">Concerts & Performance Advice</a>
+            <a href="library.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="library">Music Library Catalog</a>
+            <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandTeal-800 text-white rounded-md text-base font-semibold tracking-wide">Members Area</a>
+            <a href="join.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandGreen-800 text-brandTeal-300 rounded-md text-base font-semibold tracking-wide" data-tab="join">Join Us &amp; Self-Grader</a>
+        </div>
+    </header>
+
+    <!-- MAIN APP CANVAS CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== MUSIC CAMP TAB ==================== -->
+        <section class="space-y-12">
+            <!-- Hero banner -->
+            <div class="bg-gradient-to-br from-stone-950 via-stone-900 to-[#0c1610] text-white rounded-3xl p-8 sm:p-12 overflow-hidden relative shadow-lg">
+                <!-- Background decorative accent -->
+                <div class="absolute -right-8 -bottom-12 opacity-10 text-white pointer-events-none">
+                    <i class="fa-solid fa-tree text-[200px]"></i>
+                </div>
+                <div class="space-y-4 relative z-10 max-w-3xl">
+                    <span class="text-brandTeal-400 text-xs font-bold uppercase tracking-widest block">The Highlight of Our Year</span>
+                    <h2 class="text-3xl sm:text-4xl font-serif font-extrabold">Frensham Music Camp &mdash; Mittagong 2026</h2>
+                    <span class="inline-block bg-brandGreen-850 text-brandTeal-300 text-xs font-bold px-3 py-1 rounded-md">2 – 5 October 2026</span>
+                    <p class="text-stone-300 text-sm leading-relaxed pt-2">
+                        After several wonderful years, we have bid farewell to Bathurst and moved the annual 3-day music camp to the delightful **Frensham School** at Mittagong. Located just over an hour's drive from Sydney, Frensham welcomes ACMS to participate in its rich musical legacy. Pianos are abundant, food and student accommodation are adjacent, and transit stress is non-existent.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Camp Core layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <!-- Details column -->
+                <div class="lg:col-span-8 space-y-6">
+                    <h3 class="text-2xl font-serif font-bold text-stone-900">Camp Information &amp; Deadlines</h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div class="p-6 bg-white rounded-xl border border-stone-200 shadow-sm space-y-2 text-xs">
+                            <strong class="text-stone-900 block text-sm">Key Dates</strong>
+                            <p class="text-stone-600"><strong>Registration Opens:</strong> June 2026</p>
+                            <p class="text-stone-600"><strong>Closing Date:</strong> 31 August 2026 (Midnight)</p>
+                            <p class="text-stone-600"><strong>Balance Payment Due:</strong> 15 September 2026</p>
+                        </div>
+                        <div class="p-6 bg-white rounded-xl border border-stone-200 shadow-sm space-y-2 text-xs">
+                            <strong class="text-stone-900 block text-sm">Cost &amp; Payment Options</strong>
+                            <p class="text-stone-600">Detailed pricing is currently being formulated by the committee. Standard registration requires a <strong>$100 deposit</strong> upon booking.</p>
+                            <p class="text-stone-500 italic">Financial assistance/student concessions are available.</p>
+                        </div>
+                    </div>
+
+                    <!-- Camp Workshop Box -->
+                    <div class="p-6 bg-stone-100 rounded-xl border border-stone-200 space-y-3">
+                        <h4 class="font-serif font-bold text-stone-900">Special Workshop Session</h4>
+                        <p class="text-xs text-stone-600 leading-relaxed">
+                            We will host a specialized group lecture and coaching workshop during Session 1 on October 2. Past topics have included sight-reading with Jocelyn Fazzone or effective practice with Mandy Hollins. Check back for the topic and session.
+                        </p>
+                        <p class="text-xs text-brandGreen-800 font-semibold">
+                            <i class="fa-solid fa-triangle-exclamation mr-1"></i> Strictly capped at 30 participants. Normal chamber play schedules are active for other attendees.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Right widget column: Dynamic Concession Calculator -->
+                <div class="lg:col-span-4 space-y-6">
+                    <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm space-y-4">
+                        <h4 class="font-serif font-bold text-stone-900">Camp Option Simulator</h4>
+                        <p class="text-stone-500 text-xs">Simulate potential balances prior to billing.</p>
+                        
+                        <div class="space-y-3 text-xs">
+                            <div>
+                                <label class="block text-stone-600 font-medium mb-1">Accommodation Tier</label>
+                                <select id="camp-accom" class="w-full border border-stone-300 rounded-md p-2 focus:ring-1 focus:ring-brandGreen-500 outline-none">
+                                    <option value="460">Single Room, Live-In (3 Nights + All Meals) &mdash; Est. $460</option>
+                                    <option value="250">Commuter Player (No Accommodation, Lunches Incl.) &mdash; Est. $250</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-stone-600 font-medium mb-1">Workshop Enrollment</label>
+                                <select id="camp-workshop-select" class="w-full border border-stone-300 rounded-md p-2 focus:ring-1 focus:ring-brandGreen-500 outline-none">
+                                    <option value="yes">Enroll in Opening Workshop (Free, Max 30)</option>
+                                    <option value="no">Skip Workshop (Proceed to normal plays)</option>
+                                </select>
+                            </div>
+                            <div class="bg-stone-50 p-3 rounded border border-stone-150 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Estimated Cost:</span>
+                                    <strong id="camp-est-total" class="text-stone-900">$580.00</strong>
+                                </div>
+                                <div class="flex justify-between text-brandGreen-700">
+                                    <span>Less Deposit:</span>
+                                    <span>-$100.00</span>
+                                </div>
+                                <hr>
+                                <div class="flex justify-between font-bold text-stone-900">
+                                    <span>Est. Balance:</span>
+                                    <span id="camp-est-balance" class="text-brandGreen-800">$480.00</span>
+                                </div>
+                            </div>
+                            <button id="btn-pre-register" class="w-full bg-brandGreen-700 hover:bg-brandGreen-800 text-white font-semibold py-2 rounded text-center block tracking-wide">
+                                Pre-Register Interest
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING POPUP NOTIFICATION (Replacement for Browser Alerts) -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-stone-850 max-w-sm z-50 flex items-start space-x-3 transition duration-300">
+        <div class="bg-stone-800 text-brandGreen-400 p-1.5 rounded-lg text-sm" id="toast-icon">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="space-y-1">
+            <strong class="text-xs font-serif block text-white" id="toast-title">Notification</strong>
+            <p class="text-stone-300 text-[11px] leading-relaxed" id="toast-body">Message context goes here.</p>
+        </div>
+    </div>
+
+    <!-- PRE-FOOTER MAP ACCENT -->
+    <section class="bg-[#080d0a] text-stone-400 py-12 border-t border-brandGreen-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Contact Us</span>
+                <p>We are always eager to assist with chamber arrangements, library borrowings, or new membership approvals.</p>
+                <div class="space-y-2 text-stone-300">
+                    <p><i class="fa-solid fa-envelope mr-1.5 text-brandGreen-400"></i> <a href="mailto:patsy.short@acms-australia.org" class="hover:underline">patsy.short@acms-australia.org</a></p>
+                    <p><i class="fa-solid fa-phone mr-1.5 text-brandGreen-400"></i> <a href="tel:0423293728" class="hover:underline">0423 293 728</a></p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">National Branches</span>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Sydney Metropolitan Branch</li>
+                    <li>&bull; Blue Mountains Sub-Branch</li>
+                    <li>&bull; Brisbane playing days (Somerville House)</li>
+                    <li>&bull; Canberra ACT branch (ANU School of Music)</li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Associated Bodies</span>
+                <p>Looking for musical groupings outside of our core regional hubs? Check our affiliated state societies:</p>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Adelaide: <a href="http://www.chambermusicsa.org/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">ACMPSA</a></li>
+                    <li>&bull; Melbourne: <a href="http://vacms.weebly.com/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">VACMS</a></li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Digital Channels</span>
+                <p>Join our interactive community forums, stream past concert archives, or watch tutorials on our YouTube network.</p>
+                <div class="flex gap-4 text-stone-300 text-lg">
+                    <a href="https://www.youtube.com/@ACMSMusic" target="_blank" class="hover:text-red-500 transition"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.facebook.com/pages/Amateur-Chamber-Music-Society/191500364316" target="_blank" class="hover:text-blue-500 transition"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-stone-500 text-xs py-6 border-t border-stone-900 text-center">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 Amateur Chamber Music Society Incorporated (ACMS). All rights reserved.</p>
+            <div class="space-x-4">
+                <a href="https://www.acms-australia.org/download_file/view/496/246" class="hover:underline">ACMS Constitution</a>
+                <span>&bull;</span>
+                <span class="text-stone-600">Built for amateur chamber music development</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== LOGIC / JS CONTROLLERS ==================== -->
+    <script src="js/main.js"></script>
+    <script src="js/music-camp.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>

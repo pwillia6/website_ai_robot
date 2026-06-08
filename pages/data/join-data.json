@@ -1,0 +1,30 @@
+{
+    "graderDiagnostics": {
+        "Violin": [
+            { "val": 1, "text": "I have studied to Grade 8 AMEB equivalent, sight-read easily in any key/rhythm, and can lead a complex string section (e.g. Ravel, Shostakovich)." },
+            { "val": 2, "text": "I play confidently in ensembles, can lead or follow, read complex time signatures, but like to practice very complex fast runs." },
+            { "val": 3, "text": "I am comfortable with standard classical works, play regularly with a good tone, and can sight-read common keys (e.g. Early Mozart)." },
+            { "val": 4, "text": "I have some experience with chamber playing, read simple meters safely, but sometimes lose my spot or dip out on very fast runs." },
+            { "val": 5, "text": "I am a beginner violinist, returning after a massive break, and prefer to prepare all notes thoroughly at a slow, supportive pace." }
+        ],
+        "Cello": [
+            { "val": 1, "text": "I read tenor/treble clef easily, can play thumb position, sight-read dynamically, and can lead a complex group." },
+            { "val": 2, "text": "I am confident across major keys, have good intonation, can follow a group leader safely, and sight-read easily." },
+            { "val": 3, "text": "I play regularly, have a solid basic sound, and can read simple keys on the fly. Good starting point for cellos." },
+            { "val": 4, "text": "I read bass clef fine but struggle with tenor clef. I sometimes dip out during very fast cello sections." },
+            { "val": 5, "text": "I am mostly a beginner, returning to the instrument, and require slow tempos and advance score preparation." }
+        ],
+        "Piano": [
+            { "val": 1, "text": "I have studied to Grade 8 or above, read complex modern rhythms, and can handle massive Romantic pieces (e.g. Brahms trios)." },
+            { "val": 2, "text": "I can read complex multi-stave scores, have extensive ensemble experience, and can sight-read classical keys easily." },
+            { "val": 3, "text": "I can sight-read standard Baroque or early Classical pieces with reasonable accuracy but avoid dense Romantic pieces." },
+            { "val": 4, "text": "I struggle to sight-read and play at the same time. I need at least 1-3 weeks of advance practice to find notes." }
+        ],
+        "Wind": [
+            { "val": 1, "text": "Advanced player. Easily sight-read complex keys, transpositions, and keep a beautiful, stable, tuned tone." },
+            { "val": 2, "text": "Experienced wind player. Keep solid intonation, comfortable with complex modern signatures." },
+            { "val": 3, "text": "Intermediate. Can play standard classical works but prefer to practice challenging passages in advance." },
+            { "val": 4, "text": "Beginner/Returning player. Struggle to sight-read and keep tempo on the fly." }
+        ]
+    }
+}

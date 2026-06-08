@@ -1,0 +1,4 @@
+{
+    "residential": { "total": 580, "balance": 480 },
+    "commuter": { "total": 320, "balance": 220 }
+}

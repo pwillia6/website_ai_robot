@@ -1,0 +1,39 @@
+# --- Apache Security Best Practices ---
+
+# Disable directory browsing to prevent visitors from seeing file lists.
+Options -Indexes
+
+# Protect this .htaccess file from being viewed by web browsers.
+<Files ".htaccess">
+    Require all denied
+</Files>
+
+# Protect sensitive configuration files and directories.
+# This requires the mod_rewrite module to be enabled on your Apache server.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Deny web access to the main config file, the API key directory, and other non-public folders.
+    RewriteRule ^config\.php$ - [F,L]
+    RewriteRule ^etc/ - [F,L]
+    RewriteRule ^(bin|archive|Original_site)/ - [F,L]
+</IfModule>
+
+# As a fallback, or if mod_rewrite is not active, this also blocks config.php.
+<Files "config.php">
+    Require all denied
+</Files>
+
+# Deny access to backup files created by the AI editor (e.g., index.html.bak.1).
+<FilesMatch "\.bak(\.[0-9]+)?$">
+    Require all denied
+</FilesMatch>
+
+# Protect the password file itself. This is a fallback, as the etc/ directory is already blocked.
+<Files ".htpasswd">
+    Require all denied
+</Files>
+
+# Deny access to other potentially sensitive file types.
+<FilesMatch "\.(swp|log|sql|yml|yaml|dist|sh)$">
+    Require all denied
+</FilesMatch>

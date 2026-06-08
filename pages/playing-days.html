@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="data-source" content="data/events-data.json">
+    <title>Playing Days | Amateur Chamber Music Society (ACMS) Australia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-config.js"></script>
+    <!-- Google Fonts: Merriweather for Serif & Inter for Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased">
+    <!-- TOP HEADER: Premium Dark Green-Charcoal Background for Logo & Navigation -->
+    <header class="bg-[#080d0a] text-white border-b border-brandGreen-950 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand / Logo Area with Rich Dark Background -->
+                <a href="index.html" class="relative cursor-pointer">
+                    <img src="images/logo-notext.png" alt="ACMS Logo" class="h-16 mb-[5px]">
+                    <div class="absolute top-[62%] left-[74%] whitespace-nowrap">
+                        <span class="text-[9px] uppercase tracking-widest text-white font-bold block leading-tight">Amateur Chamber<br>Music Society</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Menu -->
+                <nav class="hidden lg:flex space-x-1">
+                    <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="home">Home</a>
+                    <a href="about.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="about">About Us</a>
+                    <a href="playing-days.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="playing">Playing Days</a>
+                    <a href="music-camp.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="camp">Music Camp</a>
+                    <a href="concerts.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="concerts">Concerts</a>
+                    <a href="library.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="library">Music Library</a>
+                    <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="nav-btn px-3 py-2 bg-brandTeal-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandTeal-600 hover:shadow-md ml-2">Members Area</a>
+                    <a href="join.html" class="nav-btn px-3 py-2 bg-brandGreen-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandGreen-600 hover:shadow-md" data-tab="join">Join / Self-Grader</a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button id="mobile-menu-toggle" class="text-stone-300 hover:text-white focus:outline-none focus:text-white p-2" aria-label="Toggle Menu">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Navigation Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-stone-950 border-t border-stone-850 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            <a href="index.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="home">Home</a>
+            <a href="about.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="about">About Us & History</a>
+            <a href="playing-days.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="playing">Playing Days & Pianists Guide</a>
+            <a href="music-camp.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="camp">Residential Camp</a>
+            <a href="concerts.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="concerts">Concerts & Performance Advice</a>
+            <a href="library.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="library">Music Library Catalog</a>
+            <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandTeal-800 text-white rounded-md text-base font-semibold tracking-wide">Members Area</a>
+            <a href="join.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandGreen-800 text-brandTeal-300 rounded-md text-base font-semibold tracking-wide" data-tab="join">Join Us &amp; Self-Grader</a>
+        </div>
+    </header>
+
+    <!-- MAIN APP CANVAS CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== PLAYING DAYS TAB ==================== -->
+        <section class="space-y-12">
+            <!-- Intro and schedule selector -->
+            <div class="bg-gradient-to-r from-brandGreen-900 to-stone-900 p-8 sm:p-12 text-white rounded-2xl shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="space-y-4 max-w-2xl">
+                    <span class="text-brandTeal-300 text-xs font-bold uppercase tracking-wider">Play Chamber Music</span>
+                    <h2 class="text-3xl font-serif font-bold">National Playing Days &mdash; 2026</h2>
+                    <p class="text-stone-300 text-sm leading-relaxed">
+                        Join our organized playing sessions held in high-quality acoustic music suites. All sessions are professionally tutored. Choose your preferred region below to explore regional schedules, timetables, and guidelines.
+                    </p>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button class="region-btn px-4 py-2 text-sm font-semibold rounded-lg bg-brandGreen-400 text-stone-950 shadow-md" id="btn-reg-sydney">Sydney</button>
+                    <button class="region-btn px-4 py-2 text-sm font-semibold rounded-lg bg-stone-800 text-stone-200 hover:bg-stone-700" id="btn-reg-canberra">Canberra</button>
+                    <button class="region-btn px-4 py-2 text-sm font-semibold rounded-lg bg-stone-800 text-stone-200 hover:bg-stone-700" id="btn-reg-brisbane">Brisbane</button>
+                    <button class="region-btn px-4 py-2 text-sm font-semibold rounded-lg bg-stone-800 text-stone-200 hover:bg-stone-700" id="btn-reg-blue">Blue Mountains</button>
+                    <button class="region-btn px-4 py-2 text-sm font-semibold rounded-lg bg-brandGreen-950 text-brandTeal-300 hover:bg-brandGreen-900" id="btn-reg-pianist"><i class="fa-solid fa-sheet-music mr-1"></i> Pianists Guide</button>
+                </div>
+            </div>
+
+            <!-- REGION PANEL: SYDNEY -->
+            <div id="region-sydney" class="region-panel space-y-8">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Schedule Table -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <h3 class="text-xl font-serif font-bold text-stone-900 flex items-center space-x-2">
+                            <span class="w-2.5 h-6 bg-brandGreen-500 inline-block rounded"></span>
+                            <span>Sydney 2026 Scheduled Events</span>
+                        </h3>
+                        <div class="overflow-x-auto bg-white rounded-xl border border-stone-200 shadow-sm">
+                            <table class="w-full text-left border-collapse">
+                                <thead class="bg-stone-100 text-xs text-stone-600 uppercase tracking-wider">
+                                    <tr>
+                                        <th class="p-4 border-b border-stone-200">Date 2026</th>
+                                        <th class="p-4 border-b border-stone-200">Venue</th>
+                                        <th class="p-4 border-b border-stone-200">Status</th>
+                                        <th class="p-4 border-b border-stone-200">Registration Closes</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-sm text-stone-600 divide-y divide-stone-200" id="sydney-schedule-body">
+                                    <!-- Populated dynamically by playing-days.js -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Venues Details Accordion -->
+                        <div class="space-y-4">
+                            <h4 class="font-serif font-bold text-stone-900">Venue Entry Details</h4>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div class="p-4 bg-white rounded-lg border border-stone-200 text-xs space-y-2">
+                                    <strong class="text-stone-900 block text-sm">Pymble Ladies College (PLC)</strong>
+                                    <p class="text-stone-500">Avon Road, Pymble. Close to station. Enter Gate 3, park in general spaces, walk to the Music Centre on the city side of the quad.</p>
+                                </div>
+                                <div class="p-4 bg-white rounded-lg border border-stone-200 text-xs space-y-2">
+                                    <strong class="text-stone-900 block text-sm">Santa Sabina College, Strathfield</strong>
+                                    <p class="text-stone-500">90 The Boulevarde. Note: no access from main gates on The Boulevarde! Entry is via small gate on Jersey Rd (approx. 50m in). Head to Holyrood Building.</p>
+                                </div>
+                                <div class="p-4 bg-white rounded-lg border border-stone-200 text-xs space-y-2">
+                                    <strong class="text-stone-900 block text-sm">Barker College, Waitara</strong>
+                                    <p class="text-stone-500">The Avenue (off Unwin St). Note: vehicle access can be restricted by construction. Park on Unwin St and take a brief walk in.</p>
+                                </div>
+                                <div class="p-4 bg-white rounded-lg border border-stone-200 text-xs space-y-2">
+                                    <strong class="text-stone-900 block text-sm">In-Home Playing Days</strong>
+                                    <p class="text-stone-500">Play in members' homes. Organized by geography to minimize transit. Session 1: 10am-12pm; Session 2: 2pm-4pm. Hosts note piano capabilities during form submission.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Schedule & Timetable -->
+                    <div class="space-y-6">
+                        <div class="bg-white p-6 rounded-xl border border-stone-200 shadow-sm space-y-4">
+                            <h4 class="font-serif font-bold text-stone-900 text-lg">Standard Playing Day Timetable</h4>
+                            <div class="space-y-3 divide-y divide-stone-100 text-xs">
+                                <div class="flex justify-between py-2"><span class="font-semibold">9:30 AM – 9:50 AM</span> <span class="text-stone-500">Registration & Greeting</span></div>
+                                <div class="flex justify-between py-2"><span class="font-semibold">9:50 AM – 10:00 AM</span> <span class="text-stone-500">Briefing & Group Posting</span></div>
+                                <div class="flex justify-between py-2 text-brandGreen-700 font-semibold"><span class="">10:00 AM – 12:00 PM</span> <span>Session 1 (2 Hours)</span></div>
+                                <div class="flex justify-between py-2"><span class="font-semibold">12:00 PM – 1:00 PM</span> <span class="text-stone-500">Picnic Lunch (BYO Mug)</span></div>
+                                <div class="flex justify-between py-2 text-brandGreen-700 font-semibold"><span>1:00 PM – 2:30 PM</span> <span>Session 2 (1.5 Hours)</span></div>
+                                <div class="flex justify-between py-2"><span>2:30 PM – 3:00 PM</span> <span class="text-stone-500">Afternoon Tea</span></div>
+                                <div class="flex justify-between py-2 text-brandGreen-700 font-semibold"><span>3:00 PM – 4:30 PM</span> <span>Session 3 (1.5 Hours)</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Pack Checklist -->
+                        <div class="bg-stone-900 text-white p-6 rounded-xl shadow-md space-y-4">
+                            <h4 class="font-serif font-bold text-brandTeal-300 text-lg">What to Pack &mdash; Checklist</h4>
+                            <div class="space-y-3 text-xs">
+                                <label class="flex items-start space-x-2 cursor-pointer">
+                                    <input type="checkbox" class="mt-0.5 rounded border-stone-700 text-brandGreen-600 focus:ring-brandGreen-500">
+                                    <span class="text-stone-300">All instruments (violins, flutes, cellos etc.) &mdash; except Pianos!</span>
+                                </label>
+                                <label class="flex items-start space-x-2 cursor-pointer">
+                                    <input type="checkbox" class="mt-0.5 rounded border-stone-700 text-brandGreen-600 focus:ring-brandGreen-500">
+                                    <span class="text-stone-300">Collapsible music stand (mandatory for non-pianists).</span>
+                                </label>
+                                <label class="flex items-start space-x-2 cursor-pointer">
+                                    <input type="checkbox" class="mt-0.5 rounded border-stone-700 text-brandGreen-600 focus:ring-brandGreen-500">
+                                    <span class="text-stone-300">Assigned scores if you are the designated session leader.</span>
+                                </label>
+                                <label class="flex items-start space-x-2 cursor-pointer">
+                                    <input type="checkbox" class="mt-0.5 rounded border-stone-700 text-brandGreen-600 focus:ring-brandGreen-500">
+                                    <span class="text-stone-300">Picnic lunch, nibbles, and personal tea mug.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REGION PANEL: CANBERRA -->
+            <div id="region-canberra" class="region-panel hidden space-y-8">
+                <div class="max-w-3xl mx-auto space-y-6 bg-white p-8 rounded-2xl border border-stone-200">
+                    <h3 class="text-2xl font-serif font-bold text-stone-900">Canberra Region</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        Chamber playing sessions in the ACT are hosted by the local branch at the prestigous **ANU School of Music Building**.
+                    </p>
+                    
+                    <div class="overflow-x-auto rounded-lg border border-stone-200">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4 border-b">Scheduled Date</th>
+                                    <th class="p-4 border-b">Cut-off Date</th>
+                                    <th class="p-4 border-b">Coordination</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-150" id="canberra-schedule-body">
+                                <!-- Populated dynamically by playing-days.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-150 space-y-2">
+                        <h4 class="font-serif font-semibold text-stone-900">Enquiries &amp; Contact:</h4>
+                        <p class="text-xs text-stone-600">
+                            Got questions or want to host a private group session in ACT? Connect via email at: 
+                            <a href="mailto:canberramusicians@gmail.com" class="text-brandGreen-700 font-bold hover:underline">canberramusicians@gmail.com</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REGION PANEL: BRISBANE -->
+            <div id="region-brisbane" class="region-panel hidden space-y-8">
+                <div class="max-w-3xl mx-auto space-y-6 bg-white p-8 rounded-2xl border border-stone-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-2xl font-serif font-bold text-stone-900">Brisbane Region</h3>
+                        <span class="text-xs font-bold bg-brandTeal-100 text-brandTeal-800 px-3 py-1 rounded-full uppercase tracking-wider">Est. 2014 &mdash; 10th Anniversary Celebrated!</span>
+                    </div>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        Queensland Amateur Chamber Music Society (QACMS) amalgamated with us in 2009. We play regularly at the glorious **Somerville House** campus. Cost per playing day is **$30** (plus annual membership fee).
+                    </p>
+
+                    <div class="overflow-x-auto rounded-lg border border-stone-200">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4 border-b">Playing Date 2026</th>
+                                    <th class="p-4 border-b">Cut-off Date</th>
+                                    <th class="p-4 border-b">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-150" id="brisbane-schedule-body">
+                                <!-- Populated dynamically by playing-days.js -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-150 space-y-4">
+                        <h4 class="font-serif font-bold text-stone-900 text-sm">Standard Format:</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-stone-600">
+                            <div><strong>Session 1:</strong> 9:30 AM – 11:00 AM</div>
+                            <div><strong>Session 2:</strong> 11:30 AM – 1:00 PM</div>
+                            <div><strong>Lunchtime Concert:</strong> 1:00 PM – 1:45 PM</div>
+                            <div><strong>Session 3:</strong> 2:00 PM – 3:30 PM</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REGION PANEL: BLUE MOUNTAINS -->
+            <div id="region-blue" class="region-panel hidden space-y-8">
+                <div class="max-w-3xl mx-auto space-y-6 bg-white p-8 rounded-2xl border border-stone-200">
+                    <h3 class="text-2xl font-serif font-bold text-stone-900">Blue Mountains Region</h3>
+                    <p class="text-stone-600 text-sm leading-relaxed">
+                        Our Blue Mountains branch plays in a stunning setting at **St Andrews Uniting Church Hall, Lucasville Road, Glenbrook**. These days are designed to be extremely relaxed.
+                    </p>
+
+                    <div class="p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-xs text-emerald-800">
+                        <i class="fa-solid fa-circle-info mr-1"></i> Cost to cover hall hire is **$10** (paid in cash on the day). Please arrive at **9:30 AM** for a prompt 10:00 AM kickoff.
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div class="p-6 bg-stone-50 rounded-xl border border-stone-150 space-y-2">
+                            <span class="text-xs text-stone-400 block uppercase">2026 Session Dates</span>
+                            <div id="blue-mountains-schedule-container">
+                                <!-- Populated dynamically by playing-days.js -->
+                            </div>
+                        </div>
+                        <div class="p-6 bg-stone-50 rounded-xl border border-stone-150 space-y-2 text-xs">
+                            <span class="text-xs text-stone-400 block uppercase">Contacts &amp; Coordinator</span>
+                            <p class="text-stone-600">Organized by <strong>Sybbi Georgiou</strong> (successor to long-standing organizer Bill Johnson).</p>
+                            <p class="font-bold text-stone-900">Mobile: 0413 556 745</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- REGION PANEL: PIANISTS GUIDE -->
+            <div id="region-pianist" class="region-panel hidden space-y-8">
+                <div class="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-3xl border border-stone-200 shadow-sm space-y-8">
+                    <div class="border-b border-stone-100 pb-6">
+                        <span class="text-xs font-bold text-brandGreen-700 tracking-wider uppercase block">Chamber Music Essential Guide</span>
+                        <h3 class="text-3xl font-serif font-bold text-stone-900 mt-1">Advice for Chamber Pianists</h3>
+                        <p class="text-stone-500 text-sm leading-relaxed mt-2">
+                            Chamber music is about achieving 'sympathetic dialogue'. Unlike other instruments, the piano is a percussive beast capable of a massive sound. Use these guidelines to blend harmoniously and prepare for ACMS sessions.
+                        </p>
+                    </div>
+
+                    <!-- Chronological Repertoire Search Grid -->
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h4 class="font-serif font-bold text-stone-900">Explore Repertoire standards &amp; Grading</h4>
+                            <!-- Search box for composer -->
+                            <input type="text" id="composer-search" placeholder="Filter composers (e.g. Mozart, Brahms)..." class="text-xs border border-stone-300 rounded-lg px-3 py-1.5 focus:ring-1 focus:ring-brandGreen-500 outline-none w-48 sm:w-64">
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="pianist-repertoire-container">
+                            <!-- Populated dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- A few tips -->
+                    <div class="bg-stone-50 p-6 rounded-xl border border-stone-150 space-y-4 text-xs sm:text-sm text-stone-600">
+                        <h4 class="font-serif font-bold text-stone-900">Key Preparation Insights:</h4>
+                        <ul class="space-y-3 pl-4 list-disc">
+                            <li><strong>The Pianist Rules the Room:</strong> Because you hold the full score, you have an inherent default responsibility for keeping everyone together.</li>
+                            <li><strong>Limit Sight-Reading Stress:</strong> Select three or four core trios (e.g., Mozart or early Beethoven) and prepare them until they are fluent. Scores are available via imslp.org or our music library.</li>
+                            <li><strong>Use Recording Guides:</strong> Listen to recordings on YouTube to see how your part interlocks. Rehearsals are for practicing the ensemble dynamics, not learning the raw notes!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING POPUP NOTIFICATION (Replacement for Browser Alerts) -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-stone-850 max-w-sm z-50 flex items-start space-x-3 transition duration-300">
+        <div class="bg-stone-800 text-brandGreen-400 p-1.5 rounded-lg text-sm" id="toast-icon">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="space-y-1">
+            <strong class="text-xs font-serif block text-white" id="toast-title">Notification</strong>
+            <p class="text-stone-300 text-[11px] leading-relaxed" id="toast-body">Message context goes here.</p>
+        </div>
+    </div>
+
+    <!-- PRE-FOOTER MAP ACCENT -->
+    <section class="bg-[#080d0a] text-stone-400 py-12 border-t border-brandGreen-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Contact Us</span>
+                <p>We are always eager to assist with chamber arrangements, library borrowings, or new membership approvals.</p>
+                <div class="space-y-2 text-stone-300">
+                    <p><i class="fa-solid fa-envelope mr-1.5 text-brandGreen-400"></i> <a href="mailto:patsy.short@acms-australia.org" class="hover:underline">patsy.short@acms-australia.org</a></p>
+                    <p><i class="fa-solid fa-phone mr-1.5 text-brandGreen-400"></i> <a href="tel:0423293728" class="hover:underline">0423 293 728</a></p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">National Branches</span>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Sydney Metropolitan Branch</li>
+                    <li>&bull; Blue Mountains Sub-Branch</li>
+                    <li>&bull; Brisbane playing days (Somerville House)</li>
+                    <li>&bull; Canberra ACT branch (ANU School of Music)</li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Associated Bodies</span>
+                <p>Looking for musical groupings outside of our core regional hubs? Check our affiliated state societies:</p>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Adelaide: <a href="http://www.chambermusicsa.org/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">ACMPSA</a></li>
+                    <li>&bull; Melbourne: <a href="http://vacms.weebly.com/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">VACMS</a></li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Digital Channels</span>
+                <p>Join our interactive community forums, stream past concert archives, or watch tutorials on our YouTube network.</p>
+                <div class="flex gap-4 text-stone-300 text-lg">
+                    <a href="https://www.youtube.com/@ACMSMusic" target="_blank" class="hover:text-red-500 transition"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.facebook.com/pages/Amateur-Chamber-Music-Society/191500364316" target="_blank" class="hover:text-blue-500 transition"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-stone-500 text-xs py-6 border-t border-stone-900 text-center">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 Amateur Chamber Music Society Incorporated (ACMS). All rights reserved.</p>
+            <div class="space-x-4">
+                <a href="https://www.acms-australia.org/download_file/view/496/246" class="hover:underline">ACMS Constitution</a>
+                <span>&bull;</span>
+                <span class="text-stone-600">Built for amateur chamber music development</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== LOGIC / JS CONTROLLERS ==================== -->
+    <script src="js/main.js"></script>
+    <script src="js/playing-days.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>

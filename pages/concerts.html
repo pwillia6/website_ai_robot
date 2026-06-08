@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="data-source" content="data/events-data.json">
+    <title>Concerts | Amateur Chamber Music Society (ACMS) Australia</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="js/tailwind-config.js"></script>
+    <!-- Google Fonts: Merriweather for Serif & Inter for Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- TOP HEADER: Premium Dark Green-Charcoal Background for Logo & Navigation -->
+    <header class="bg-[#080d0a] text-white border-b border-brandGreen-950 shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                <!-- Brand / Logo Area with Rich Dark Background -->
+                <a href="index.html" class="relative cursor-pointer">
+                    <img src="images/logo-notext.png" alt="ACMS Logo" class="h-16 mb-[5px]">
+                    <div class="absolute top-[62%] left-[74%] whitespace-nowrap">
+                        <span class="text-[9px] uppercase tracking-widest text-white font-bold block leading-tight">Amateur Chamber<br>Music Society</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Menu -->
+                <nav class="hidden lg:flex space-x-1">
+                    <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="home">Home</a>
+                    <a href="about.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="about">About Us</a>
+                    <a href="playing-days.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="playing">Playing Days</a>
+                    <a href="music-camp.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="camp">Music Camp</a>
+                    <a href="concerts.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="concerts">Concerts</a>
+                    <a href="library.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="library">Music Library</a>
+                    <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="nav-btn px-3 py-2 bg-brandTeal-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandTeal-600 hover:shadow-md ml-2">Members Area</a>
+                    <a href="join.html" class="nav-btn px-3 py-2 bg-brandGreen-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandGreen-600 hover:shadow-md" data-tab="join">Join / Self-Grader</a>
+                </nav>
+
+                <!-- Mobile Menu Button -->
+                <div class="lg:hidden">
+                    <button id="mobile-menu-toggle" class="text-stone-300 hover:text-white focus:outline-none focus:text-white p-2" aria-label="Toggle Menu">
+                        <i class="fa-solid fa-bars text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Dropdown Navigation Menu -->
+        <div id="mobile-menu" class="hidden lg:hidden bg-stone-950 border-t border-stone-850 px-4 pt-2 pb-4 space-y-1 shadow-inner">
+            <a href="index.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="home">Home</a>
+            <a href="about.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="about">About Us & History</a>
+            <a href="playing-days.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="playing">Playing Days & Pianists Guide</a>
+            <a href="music-camp.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="camp">Residential Camp</a>
+            <a href="concerts.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="concerts">Concerts & Performance Advice</a>
+            <a href="library.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="library">Music Library Catalog</a>
+            <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandTeal-800 text-white rounded-md text-base font-semibold tracking-wide">Members Area</a>
+            <a href="join.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandGreen-800 text-brandTeal-300 rounded-md text-base font-semibold tracking-wide" data-tab="join">Join Us &amp; Self-Grader</a>
+        </div>
+    </header>
+
+    <!-- MAIN APP CANVAS CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- ==================== CONCERTS TAB ==================== -->
+        <section class="space-y-12">
+            <!-- Navigation Sub-Menu -->
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-stone-200 pb-4 gap-4">
+                <div>
+                    <h2 class="text-3xl font-serif font-bold text-stone-900">Concerts &amp; Performance Guides</h2>
+                    <p class="text-stone-500 text-sm">Experience chamber performance as a listener or player.</p>
+                </div>
+                <div class="bg-stone-100 rounded-lg p-1 flex space-x-1">
+                    <button class="concert-sub-btn px-4 py-2 text-xs font-semibold rounded-md bg-white text-stone-800 shadow" id="btn-con-planned">2026 Planned Programs</button>
+                    <button class="concert-sub-btn px-4 py-2 text-xs font-semibold rounded-md text-stone-600 hover:text-stone-800" id="btn-con-preparing">Lorraine Moxey's Prep Tips (1992)</button>
+                    <button class="concert-sub-btn px-4 py-2 text-xs font-semibold rounded-md text-stone-600 hover:text-stone-800" id="btn-con-organiser">Organiser Roles</button>
+                </div>
+            </div>
+
+            <!-- SUBCONTENT: PLANNED CONCERTS -->
+            <div id="con-planned" class="concert-sub-panel space-y-8">
+                <!-- Location Info -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Text detail -->
+                    <div class="lg:col-span-1 space-y-4 text-sm text-stone-600 leading-relaxed">
+                        <h3 class="text-xl font-serif font-bold text-stone-900 flex items-center space-x-2">
+                            <span class="w-2.5 h-6 bg-brandGreen-500 inline-block rounded"></span>
+                            <span>Kirribilli Neighborhood Centre</span>
+                        </h3>
+                        <p>
+                            Our intimate chamber recitals are held bi-monthly on <strong>Sundays at 3:00 PM</strong> in the beautiful upstairs Gallery Room of the <strong>Kirribilli Centre</strong> (16 Fitzroy St, Kirribilli). 
+                        </p>
+                        <p>
+                            <strong>Audience Entry:</strong> <strong>$15.00</strong> ($10.00 concession). Payment is collected at the eastern stairway or the lift vestibule. Ticket prices include access to premium refreshments, wines, juices, and cheeses served immediately after in the gallery.
+                        </p>
+                    </div>
+                    <!-- Transit Map -->
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm text-xs space-y-3">
+                        <strong class="text-stone-900 text-sm block">Transit &amp; Parking Instructions:</strong>
+                        <p><strong>Train:</strong> Just a brief 5-minute stroll from Milson's Point Station.</p>
+                        <p><strong>Ferry:</strong> From Milson's Point Wharf (Circular Quay takes 5 mins; Balmain takes 9 mins).</p>
+                        <p><strong>Car:</strong> Street parking is extremely tight. Allow ample time to seek parking.</p>
+                    </div>
+                    <!-- Street Map -->
+                    <div class="bg-white p-5 rounded-xl border border-stone-200 shadow-sm">
+                        <strong class="text-stone-900 text-sm block mb-3">Kirribilli Centre Location:</strong>
+                        <div class="relative w-full h-48">
+                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3313.917088998592!2d151.2144793753066!3d-33.83602147323869!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x6b12af3009624581%3A0x66491295c5100a7b!2sKirribilli%20Centre!5e0!3m2!1sen!2sau!4v1701830000000!5m2!1sen!2sau" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Concerts Table -->
+                <div class="space-y-4">
+                    <h4 class="font-serif font-bold text-stone-900 text-lg">2026 Concert Schedule &amp; Programs</h4>
+                    <div class="overflow-x-auto bg-white rounded-xl border border-stone-200 shadow-sm">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead class="bg-stone-50 text-stone-500 text-xs uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-4 border-b">Concert Date</th>
+                                    <th class="p-4 border-b">Organiser</th>
+                                    <th class="p-4 border-b">Selected Repertoire Highlights</th>
+                                    <th class="p-4 border-b">Vacancies</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-150" id="concerts-table-body">
+                                <!-- Populated dynamically by concerts.js -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBCONTENT: PREPARING TIPS -->
+            <div id="con-preparing" class="concert-sub-panel hidden space-y-6">
+                <div class="bg-stone-50 p-6 rounded-2xl border border-stone-200">
+                    <h3 class="text-2xl font-serif font-bold text-stone-900">Preparing For A Performance</h3>
+                    <span class="text-xs text-stone-500 block">By Lorraine Moxey (Original publication, January 1992)</span>
+                    <p class="text-stone-600 text-sm mt-3 leading-relaxed">
+                        Performing is the most rewarding thing a musician can do. However, a successful chamber recital demands thorough pacing and group discipline. Review these steps to prepare your mind and body for the stage.
+                    </p>
+                </div>
+
+                <!-- Interactive Accordion Checklists -->
+                <div class="space-y-4">
+                    <div class="bg-white rounded-lg border border-stone-200 overflow-hidden shadow-sm">
+                        <button class="w-full text-left p-4 font-bold text-stone-800 hover:bg-stone-50 flex justify-between items-center text-sm sm:text-base">
+                            <span>1. Timing &amp; Selection (3 Months Prior)</span>
+                            <i class="fa-solid fa-chevron-down" id="acc-pre-1-arrow"></i>
+                        </button>
+                        <div id="acc-pre-1" class="hidden p-6 border-t border-stone-100 text-xs sm:text-sm text-stone-600 space-y-3 bg-stone-50/50">
+                            <p><strong>Buffer your preparation:</strong> Allow a full three months of preparation for an unfamiliar chamber piece assuming 1 rehearsal per week.</p>
+                            <p><strong>Pick manageable limits:</strong> A simple, beautiful movement performed flawlessly is infinitely better than a complex, frantic movement played poorly.</p>
+                            <p><strong>Erase distractions:</strong> Wipe clean any prior pencil markings or fingerings before rehearsals begin, highlighting tricky transitions with a soft pencil icon.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-stone-200 overflow-hidden shadow-sm">
+                        <button class="w-full text-left p-4 font-bold text-stone-800 hover:bg-stone-50 flex justify-between items-center text-sm sm:text-base">
+                            <span>2. Rehearsal &amp; Tuning Etiquette</span>
+                            <i class="fa-solid fa-chevron-down" id="acc-pre-2-arrow"></i>
+                        </button>
+                        <div id="acc-pre-2" class="hidden p-6 border-t border-stone-100 text-xs sm:text-sm text-stone-600 space-y-3 bg-stone-50/50">
+                            <p><strong>Slow, Soft Tuning:</strong> Always tune softly, particularly string players. Once in tune, sit quietly. Tuning is not a time to perform personal cadenzas.</p>
+                            <p><strong>Establish Seating Lines:</strong> Place chairs so that peripheral vision connects all musicians. Low music stands prevent barrier blocks.</p>
+                            <p><strong>Tolerate Constructive Critique:</strong> Chamber groups are ultimate democracies. Try disputes both ways and make determinations objectively. Do not let egos damage music.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-lg border border-stone-200 overflow-hidden shadow-sm">
+                        <button class="w-full text-left p-4 font-bold text-stone-800 hover:bg-stone-50 flex justify-between items-center text-sm sm:text-base">
+                            <span>3. Managing Nerves on Stage</span>
+                            <i class="fa-solid fa-chevron-down" id="acc-pre-3-arrow"></i>
+                        </button>
+                        <div id="acc-pre-3" class="hidden p-6 border-t border-stone-100 text-xs sm:text-sm text-stone-600 space-y-3 bg-stone-50/50">
+                            <p><strong>Taming Physicality:</strong> Shaking limbs, perspiration, and dry throat are perfectly natural adrenaline responses. Nerves give performance an incredible 'edge' if focused positively.</p>
+                            <p><strong>Breathe Before Starting:</strong> When sitting on stage, take 5 extra seconds. Breathe slowly to steady your pulse. Establish key templates mentally before the leader bows.</p>
+                            <p><strong>Mistake Immunity:</strong> Never grimace or frown when a part is dropped. 90% of the audience never notices; the remaining 10% are rooting for you. Put double the energy into the following bar!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBCONTENT: ORGANISER ROLE -->
+            <div id="con-organiser" class="concert-sub-panel hidden space-y-6">
+                <div class="bg-white p-6 sm:p-8 rounded-2xl border border-stone-200 shadow-sm space-y-6 text-sm text-stone-600 leading-relaxed">
+                    <h3 class="text-2xl font-serif font-bold text-stone-900">Kirribilli Concert Organiser Checklist</h3>
+                    <p>
+                        Running our concert series is a rewarding privilege. Below is the step-by-step checklist to coordinate a bi-monthly recital program.
+                    </p>
+                    
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-full bg-brandGreen-700 text-white flex items-center justify-center font-bold text-xs mt-0.5">1</span>
+                            <div>
+                                <strong class="text-stone-900">Verify Financial Membership:</strong> Ensure all participating musicians are active, paid financial members of ACMS. Encourage non-financial or external players to pay dues via the register system prior to concert date.
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-full bg-brandGreen-700 text-white flex items-center justify-center font-bold text-xs mt-0.5">2</span>
+                            <div>
+                                <strong class="text-stone-900">Draft Program &amp; Notes:</strong> Aim for approximately 60–70 minutes of total playing duration. Forward electronic program outlines to coordinator Felicia Mitchell at least 2 weeks prior, and print 40 paper program booklets to place at the entrance table.
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-full bg-brandGreen-700 text-white flex items-center justify-center font-bold text-xs mt-0.5">3</span>
+                            <div>
+                                <strong class="text-stone-900">Sound-Checks and Venue Open:</strong> The Gallery Room is unlocked at 2:00 PM. Rehearsals and sound-checks should wind down by 2:40 PM so guests can settle in for a prompt 3:00 PM start.
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-3">
+                            <span class="w-6 h-6 rounded-full bg-brandGreen-700 text-white flex items-center justify-center font-bold text-xs mt-0.5">4</span>
+                            <div>
+                                <strong class="text-stone-900">Welcome &amp; Acknowledgment:</strong> Start the program by welcoming the audience and reading the traditional Acknowledgement of Country. Remind listeners of the delicious post-concert refreshments, and request their help stacking the gallery chairs against the walls at 4:30 PM.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FLOATING POPUP NOTIFICATION (Replacement for Browser Alerts) -->
+    <div id="toast" class="hidden fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-stone-850 max-w-sm z-50 flex items-start space-x-3 transition duration-300">
+        <div class="bg-stone-800 text-brandGreen-400 p-1.5 rounded-lg text-sm" id="toast-icon">
+            <i class="fa-solid fa-bell"></i>
+        </div>
+        <div class="space-y-1">
+            <strong class="text-xs font-serif block text-white" id="toast-title">Notification</strong>
+            <p class="text-stone-300 text-[11px] leading-relaxed" id="toast-body">Message context goes here.</p>
+        </div>
+    </div>
+
+    <!-- PRE-FOOTER MAP ACCENT -->
+    <section class="bg-[#080d0a] text-stone-400 py-12 border-t border-brandGreen-950">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-8 text-xs">
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Contact Us</span>
+                <p>We are always eager to assist with chamber arrangements, library borrowings, or new membership approvals.</p>
+                <div class="space-y-2 text-stone-300">
+                    <p><i class="fa-solid fa-envelope mr-1.5 text-brandGreen-400"></i> <a href="mailto:patsy.short@acms-australia.org" class="hover:underline">patsy.short@acms-australia.org</a></p>
+                    <p><i class="fa-solid fa-phone mr-1.5 text-brandGreen-400"></i> <a href="tel:0423293728" class="hover:underline">0423 293 728</a></p>
+                </div>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">National Branches</span>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Sydney Metropolitan Branch</li>
+                    <li>&bull; Blue Mountains Sub-Branch</li>
+                    <li>&bull; Brisbane playing days (Somerville House)</li>
+                    <li>&bull; Canberra ACT branch (ANU School of Music)</li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Associated Bodies</span>
+                <p>Looking for musical groupings outside of our core regional hubs? Check our affiliated state societies:</p>
+                <ul class="space-y-2 text-stone-300">
+                    <li>&bull; Adelaide: <a href="http://www.chambermusicsa.org/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">ACMPSA</a></li>
+                    <li>&bull; Melbourne: <a href="http://vacms.weebly.com/" target="_blank" class="hover:underline text-brandTeal-400 font-semibold">VACMS</a></li>
+                </ul>
+            </div>
+            <div class="space-y-4">
+                <span class="text-brandTeal-300 font-bold uppercase tracking-wider text-[10px]">Digital Channels</span>
+                <p>Join our interactive community forums, stream past concert archives, or watch tutorials on our YouTube network.</p>
+                <div class="flex gap-4 text-stone-300 text-lg">
+                    <a href="https://www.youtube.com/@ACMSMusic" target="_blank" class="hover:text-red-500 transition"><i class="fa-brands fa-youtube"></i></a>
+                    <a href="https://www.facebook.com/pages/Amateur-Chamber-Music-Society/191500364316" target="_blank" class="hover:text-blue-500 transition"><i class="fa-brands fa-facebook-f"></i></a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-black text-stone-500 text-xs py-6 border-t border-stone-900 text-center">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p>&copy; 2026 Amateur Chamber Music Society Incorporated (ACMS). All rights reserved.</p>
+            <div class="space-x-4">
+                <a href="https://www.acms-australia.org/download_file/view/496/246" class="hover:underline">ACMS Constitution</a>
+                <span>&bull;</span>
+                <span class="text-stone-600">Built for amateur chamber music development</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== LOGIC / JS CONTROLLERS ==================== -->
+    <script src="js/main.js"></script>
+    <script src="js/concerts.js"></script>
+    <script src="js/editor.js"></script>
+</body>
+</html>

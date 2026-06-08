@@ -1,0 +1,19 @@
+{
+  "html_pages": [
+    { "path": "index.html", "title": "Home" },
+    { "path": "about.html", "title": "About Us" },
+    { "path": "playing-days.html", "title": "Playing Days" },
+    { "path": "music-camp.html", "title": "Music Camp" },
+    { "path": "concerts.html", "title": "Concerts" },
+    { "path": "library.html", "title": "Music Library" },
+    { "path": "join.html", "title": "Join / Self-Grader" }
+  ],
+  "json_files": [
+    "data/events-data.json",
+    "data/about-data.json",
+    "data/join-data.json",
+    "data/library-data.json",
+    "data/music-camp-data.json",
+    "data/playing-days-data.json"
+  ]
+}
