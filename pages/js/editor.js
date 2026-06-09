@@ -2,8 +2,14 @@
 
 (function() {
     // --- Cookie Helpers ---
-    function setSessionCookie(name, value) {
-        document.cookie = name + "=" + (value || "") + "; path=/";
+    function setSessionCookie(name, value, days) {
+        let expires = "";
+        if (days) {
+            const date = new Date();
+            date.setTime(date.getTime() + (days*24*60*60*1000));
+            expires = "; expires=" + date.toUTCString();
+        }
+        document.cookie = name + "=" + (value || "")  + expires + "; path=/";
     }
 
     function getCookie(name) {
@@ -45,12 +51,16 @@
                         <span id="ai-editor-btn-text">Generate</span>
                         <i id="ai-editor-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
                     </button>
-                    <div class="flex items-center gap-2">
-                        <button id="ai-editor-history" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                    <div class="flex items-center gap-1.5">
+                        <button id="ai-editor-history" title="View file history" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
                             <i class="fa-solid fa-history"></i>
                             <span>History</span>
                         </button>
-                        <button id="ai-editor-scope" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                        <button id="ai-editor-new-chat" title="Start a new conversation" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                            <i class="fa-solid fa-comment-slash"></i>
+                            <span>New Chat</span>
+                        </button>
+                        <button id="ai-editor-scope" title="Set edit scope" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
                             <i class="fa-solid fa-crosshairs"></i>
                             <span>Scope</span>
                         </button>
@@ -249,6 +259,17 @@
         }
     }
 
+    /**
+     * Clears the conversation history by deleting the interaction ID cookie.
+     */
+    function handleNewChat() {
+        if (confirm('Are you sure you want to start a new conversation? This will clear the AI\'s memory of previous requests.')) {
+            setSessionCookie('gemini_interaction_id', '', -1); // Expire cookie
+            document.getElementById('ai-editor-prompt').value = '';
+            showToast('AI Editor', 'New conversation started.', true);
+        }
+    }
+
     function toggleEditorBar() {
         const bar = document.getElementById('ai-editor-bar');
         const toggleBtn = document.getElementById('ai-editor-toggle');
@@ -300,23 +321,31 @@
         try {
             // Collect scope data
             const updateAllHtml = document.getElementById('ai-update-all-html')?.checked || false;
-            
             let filesToUpdate = [];
             if (updateAllHtml) {
                 // Let the backend figure out all HTML files from sitemap
             } else {
                 filesToUpdate = Array.from(document.querySelectorAll('.ai-target-file:checked')).map(el => el.value);
             }
-            
             // If for some reason nothing is selected, default to current file.
             if (filesToUpdate.length === 0 && !updateAllHtml) {
                 filesToUpdate.push(getCurrentFilePath());
             }
 
+            const isMultiFile = updateAllHtml || filesToUpdate.length > 1;
+            let interactionId = null;
+
+            if (isMultiFile) {
+                setSessionCookie('gemini_interaction_id', '', -1); // Clear cookie for batch jobs
+            } else {
+                interactionId = getCookie('gemini_interaction_id');
+            }
+
             const payload = {
                 prompt: userPrompt,
                 update_all_html: updateAllHtml,
-                target_files: filesToUpdate
+                target_files: filesToUpdate,
+                interaction_id: interactionId
             };
 
             const response = await fetch('webrobot.php?action=generate_and_save', {
@@ -326,7 +355,15 @@
             });
 
             if (!response.ok) throw new Error((await response.json()).error || 'Generate failed.');
+            
             const result = await response.json();
+            if (result.interaction_id) {
+                setSessionCookie('gemini_interaction_id', result.interaction_id, 1); // Set for 1 day
+            } else if (!isMultiFile) {
+                // If it was a single file request but no ID came back, clear the cookie.
+                setSessionCookie('gemini_interaction_id', '', -1);
+            }
+
             showToast('AI Editor', result.message || 'Update successful! Reloading...', true);
 
             // Reload the page to see the changes from the server.
@@ -519,6 +556,7 @@
         // History/Rollback listeners
         document.getElementById('ai-editor-history')?.addEventListener('click', showHistoryModal);
         document.getElementById('ai-editor-history-close')?.addEventListener('click', hideHistoryModal);
+        document.getElementById('ai-editor-new-chat')?.addEventListener('click', handleNewChat);
         document.getElementById('ai-editor-history-modal')?.addEventListener('click', (e) => {
             // Close modal if clicking on the background overlay
             if (e.target.id === 'ai-editor-history-modal') {

@@ -70,14 +70,14 @@ class GeminiService {
      * @return array An array containing the 'content' (the AI's response) and 'usage' (token metadata).
      * @throws Exception If the API key is not configured or if the API call fails.
      */
-    public function call_gemini_api($fileContent, $filePath, $userPrompt, $contextFiles = array()) {
+    public function call_gemini_api($fileContent, $filePath, $userPrompt, $contextFiles = array(), $interaction_id = null) {
         if ($this->apiKey === 'YOUR_GEMINI_API_KEY') {
             throw new Exception('Gemini API key is not configured.');
         }
 
         $apiKey = $this->apiKey;
         $model = $this->model;
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key={$apiKey}";
+        $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$apiKey}";
 
         // Inject data source content into the file content for the AI to process
         // but only if a data block doesn't already exist in the content.
@@ -116,47 +116,50 @@ class GeminiService {
             // The system prompt provides the AI with its core instructions and constraints.
             $system_prompt = "You are an expert software engineering AI assistant. I will provide you with the content of a code file and a prompt to modify it. Your task is to return ONLY the complete, modified content of the file. It is crucial that you preserve all existing code, including any JavaScript within <script> tags and CSS within <style> tags, unless the user's request specifically asks to modify them. Do not remove or alter any part of the file that is not directly related to the user's request. Do not include any explanations, comments, or markdown code fences (like ```php or ```html). Just output the raw, updated file content.
 
-The file may contain a special data block formatted like this:
-<!-- START DATA FILE: path/to/data.json
-... JSON content ...
-END DATA FILE: path/to/data.json -->
+    The file may contain a special data block formatted like this:
+    <!-- START DATA FILE: path/to/data.json
+    ... JSON content ...
+    END DATA FILE: path/to/data.json -->
 
-This block contains the data associated with the page. If my request involves changing data (e.g., 'add a new event', 'update a price'), you MUST update the JSON content inside this comment block accordingly. You MUST preserve the start and end comment markers exactly as they are. The updated data will be extracted and saved automatically.";
+    This block contains the data associated with the page. If my request involves changing data (e.g., 'add a new event', 'update a price'), you MUST update the JSON content inside this comment block accordingly. You MUST preserve the start and end comment markers exactly as they are. The updated data will be extracted and saved automatically.";
 
-            $promptParts = array(
-                array('text' => $system_prompt)
-            );
-
-            // Add any specified context files to the prompt.
-            foreach ($contextFiles as $contextFilePath) {
-                // Avoid duplicating the main data source if it was already injected and passed in context
-                if ($contextFilePath === $dataSourcePathForContext) continue;
-                try {
-                    $fullContextPath = $this->updater->validate_path($contextFilePath);
-                    $content = file_get_contents($fullContextPath);
-                    if (!empty($content)) {
-                        $promptParts[] = array('text' => "For context, here is the content of '" . $contextFilePath . "':\n```\n" . $content . "\n```");
+            if ($interaction_id) {
+                // This is a follow-up turn in a conversation.
+                $data = [
+                    'model' => $model,
+                    'system_instruction' => $system_prompt,
+                    'input' => $userPrompt,
+                    'previous_interaction_id' => $interaction_id,
+                ];
+            } else {
+                // This is the first turn. Build the full context.
+                $user_message_content = "";
+                // Add any specified context files to the prompt.
+                foreach ($contextFiles as $contextFilePath) {
+                    // Avoid duplicating the main data source if it was already injected and passed in context
+                    if ($contextFilePath === $dataSourcePathForContext) continue;
+                    try {
+                        $fullContextPath = $this->updater->validate_path($contextFilePath);
+                        $content = file_get_contents($fullContextPath);
+                        if (!empty($content)) {
+                            $user_message_content .= "For context, here is the content of '" . $contextFilePath . "':\n```\n" . $content . "\n```\n\n";
+                        }
+                    } catch (Exception $e) {
+                        error_log("Could not include context file '$contextFilePath': " . $e->getMessage());
                     }
-                } catch (Exception $e) {
-                    error_log("Could not include context file '$contextFilePath': " . $e->getMessage());
                 }
+
+                // Add the main file content and the user's request to the prompt.
+                $user_message_content .= "File content to edit ('" . $filePath . "'):\n```\n" . $fileContent . "\n```\n\n";
+                $user_message_content .= "My request:\n" . $userPrompt;
+
+                $data = array(
+                    'model' => $model,
+                    'system_instruction' => $system_prompt,
+                    'input' => trim($user_message_content),
+                );
             }
 
-            // Add the main file content and the user's request to the prompt.
-            $promptParts[] = array('text' => "File content to edit ('" . $filePath . "'):\n```\n" . $fileContent . "\n```");
-            $promptParts[] = array('text' => "My request:\n" . $userPrompt);
-
-            // Construct the final payload for the Gemini API.
-            $data = array(
-                'contents' => array(array('parts' => $promptParts)),
-                'generationConfig' => array('temperature' => 0.2, 'maxOutputTokens' => 81920),
-                'safetySettings' => array(
-                    array('category' => 'HARM_CATEGORY_HARASSMENT', 'threshold' => 'BLOCK_NONE'),
-                    array('category' => 'HARM_CATEGORY_HATE_SPEECH', 'threshold' => 'BLOCK_NONE'),
-                    array('category' => 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold' => 'BLOCK_NONE'),
-                    array('category' => 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold' => 'BLOCK_NONE'),
-                )
-            );
             $logData['request']['fullPayload'] = $data;
 
             // Execute the API call using cURL.
@@ -190,31 +193,52 @@ This block contains the data associated with the page. If my request involves ch
 
             $result = json_decode($apiResponse, true);
 
-            // Check for specific API errors, like exceeding the token limit.
-            if (isset($result['candidates'][0]['finishReason']) && $result['candidates'][0]['finishReason'] === 'MAX_TOKENS') {
-                throw new Exception('The AI response was truncated because the file is too large to be fully rewritten. The edit was not saved. Please try a smaller file or a more focused prompt.');
+            // Check for specific API errors.
+            if (!isset($result['status']) || ($result['status'] !== 'completed' && $result['status'] !== 'incomplete')) {
+                $status = $result['status'] ?? 'unknown';
+                $message = 'Interaction did not complete successfully. Status: ' . $status;
+                if (isset($result['error']['message'])) { // Check if there's a more specific error message
+                    $message .= '. Details: ' . $result['error']['message'];
+                }
+                throw new Exception($message);
             }
 
-            if (isset($result['candidates'][0]['content']['parts'][0]['text'])) {
+            $newContent = null;
+            if (isset($result['steps']) && is_array($result['steps'])) {
+                foreach ($result['steps'] as $step) {
+                    if (isset($step['type']) && $step['type'] === 'model_output' && isset($step['content'][0]['text'])) {
+                        $newContent = $step['content'][0]['text'];
+                        break; // Found the content, exit the loop
+                    }
+                }
+            }
+
+            if ($newContent !== null) {
                 // Successfully received content from the API.
-                $newContent = $result['candidates'][0]['content']['parts'][0]['text'];
-                $usage = isset($result['usageMetadata']) ? $result['usageMetadata'] : array();
+                $usage = $result['usage'] ?? [];
+                $final_usage = [
+                    'promptTokenCount' => $usage['total_input_tokens'] ?? 0,
+                    'candidatesTokenCount' => $usage['total_output_tokens'] ?? 0,
+                    'totalTokens' => $usage['total_tokens'] ?? 0
+                ];
                 $processedContent = trim(preg_replace('/^```[a-z]*\n|\n```$/', '', $newContent));
 
                 $logData['processed'] = [
                     'extractedContent' => $processedContent,
-                    'usage' => $usage,
+                    'usage' => $final_usage,
                 ];
-                
                 // Log the successful interaction before returning.
                 $this->log_gemini_interaction($logData);
 
+                $new_interaction_id = $result['id'] ?? null;
+
                 return array(
                     'content' => $processedContent,
-                    'usage' => $usage
+                    'usage' => $final_usage,
+                    'interaction_id' => $new_interaction_id
                 );
             } elseif (isset($result['promptFeedback']['blockReason'])) {
-                // The API blocked the request for safety reasons.
+                // This may be redundant, but good for fallback.
                 throw new Exception('API request was blocked. Reason: ' . $result['promptFeedback']['blockReason']);
             } else {
                 throw new Exception('Unexpected API response format: ' . $apiResponse);
@@ -333,7 +357,7 @@ class WebRobotUpdater {
      * @return array An array containing a success message and total token usage.
      * @throws Exception If no target files are specified.
      */
-    public function generateAndSave($prompt, $target_files, $update_all_html) {
+    public function generateAndSave($prompt, $target_files, $update_all_html, $interaction_id = null) {
         $files_to_process = array();
 
         // Determine the list of files to process based on user input.
@@ -355,16 +379,22 @@ class WebRobotUpdater {
              throw new Exception('No target files specified for update.');
         }
 
+        $is_batch_job = $update_all_html || count($files_to_process) > 1;
+        if ($is_batch_job) {
+            $interaction_id = null; // Force stateless for batch jobs
+        }
+
         $updated_files_count = 0;
         $total_usage = array('totalTokens' => 0);
+        $new_interaction_id = null;
 
         // Loop through each file, call the AI, and save the result.
         foreach($files_to_process as $filePath) {
             $fullPath = $this->validate_path($filePath);
             if (!is_file($fullPath)) continue;
             $contentToEdit = file_get_contents($fullPath);
-            // Pass the filePath to the API call for context
-            $geminiResult = $this->geminiService->call_gemini_api($contentToEdit, $filePath, $prompt);
+            
+            $geminiResult = $this->geminiService->call_gemini_api($contentToEdit, $filePath, $prompt, array(), $interaction_id);
             $newContent = $geminiResult['content'];
             $this->save_file_content($filePath, $newContent, $prompt);
             $updated_files_count++;
@@ -372,11 +402,14 @@ class WebRobotUpdater {
             if (isset($geminiResult['usage']['totalTokens'])) {
                 $total_usage['totalTokens'] += $geminiResult['usage']['totalTokens'];
             }
+            // For single file calls, we'll get the new ID. For batch, it will be null.
+            $new_interaction_id = $geminiResult['interaction_id'];
         }
         
         return [
             'message' => "$updated_files_count file(s) updated successfully by AI.",
             'usage' => $total_usage,
+            'interaction_id' => $new_interaction_id
         ];
     }
 
@@ -678,10 +711,12 @@ try {
             $prompt = isset($data['prompt']) ? $data['prompt'] : '';
             $target_files = isset($data['target_files']) ? $data['target_files'] : array();
             $update_all_html = isset($data['update_all_html']) ? $data['update_all_html'] : false;
+            $interaction_id = isset($data['interaction_id']) ? $data['interaction_id'] : null;
             
-            $result = $updater->generateAndSave($prompt, $target_files, $update_all_html);
+            $result = $updater->generateAndSave($prompt, $target_files, $update_all_html, $interaction_id);
             $response['message'] = $result['message'];
             $response['usage'] = $result['usage'];
+            $response['interaction_id'] = $result['interaction_id'];
             break;
         case 'save_text_edit':
             $data = json_decode(file_get_contents('php://input'), true);
