@@ -4,6 +4,127 @@
 define('DOC_ROOT', __DIR__);
 // --- End of Merged config.php ---
 
+
+/*-- "Curl example command" to process files with interactions API, Its output is a set of files in diff format
+
+#!/bin/bash
+
+# 1. Verify environment and arguments
+if [ -z "$GEMINI_KEY" ]; then
+    echo "Error: GEMINI_KEY environment variable is not set."
+    exit 1
+fi
+
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <html_file> <json_file>"
+    echo "Example: $0 index.html header.json"
+    exit 1
+fi
+
+HTML_FILE=$1
+JSON_FILE=$2
+
+# Check if files exist
+if [ ! -f "$HTML_FILE" ] || [ ! -f "$JSON_FILE" ]; then
+    echo "Error: One or both specified files do not exist."
+    exit 1
+fi
+
+# 2. Read the prompt from the keyboard
+echo "Enter your task/prompt for Gemini (Press Enter when done):"
+read -r USER_PROMPT
+
+if [ -z "$USER_PROMPT" ]; then
+    echo "Error: Prompt cannot be empty."
+    exit 1
+fi
+
+echo "Generating payload and calling the Interactions API..."
+
+# 3. Safely construct the JSON payload using jq
+# - Swapped model to gemini-3.5-flash for faster coding performance
+# - Updated system_instruction to request Unified Diffs
+# - Updated the JSON schema properties to expect "unified_diff"
+JSON_PAYLOAD=$(jq -n \
+  --arg html_content "$(cat "$HTML_FILE")" \
+  --arg html_name "$HTML_FILE" \
+  --arg json_content "$(cat "$JSON_FILE")" \
+  --arg json_name "$JSON_FILE" \
+  --arg prompt "$USER_PROMPT" \
+  '{
+    "model": "gemini-3.1-pro-preview",
+    "system_instruction": "You are an expert web developer. You will receive file contents and a task. Return the modifications as standard Unified Diffs for any changed files. Do not return the full file content.",
+    "input": [
+      {
+        "type": "text",
+        "text": ("--- FILE: " + $html_name + " ---\n" + $html_content)
+      },
+      {
+        "type": "text",
+        "text": ("--- FILE: " + $json_name + " ---\n" + $json_content)
+      },
+      {
+        "type": "text",
+        "text": ("--- TASK ---\n" + $prompt)
+      }
+    ],
+    "response_format": {
+      "type": "text",
+      "mime_type": "application/json",
+      "schema": {
+        "type": "object",
+        "properties": {
+          "modified_files": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "filename": { "type": "string" },
+                "unified_diff": { "type": "string" }
+              },
+              "required": ["filename", "unified_diff"]
+            }
+          }
+        },
+        "required": ["modified_files"]
+      }
+    }
+  }')
+
+# 4. Send to the Interactions API and parse the response
+curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/interactions?key=$GEMINI_KEY" \
+-H "Content-Type: application/json" \
+-d "$JSON_PAYLOAD" | jq -r '.steps[-1].content[0].text' > content.json
+
+*/
+
+/* "Sample Execution" of the command
+
+user@Pauls-Mac-mini-2 learn_interactions % sh curl index.html header.json 
+Enter your task/prompt for Gemini (Press Enter when done):
+Modify the title of the page to header and add a newplaying day to the table for Twinkle - 3 June
+Generating payload and calling the Interactions API...
+
+*/
+
+/* "Command Output" of -d "$JSON_PAYLOAD" | jq -r '.steps[-1].content[0].text' > content.json from the script
+
+{
+  "modified_files": [
+    {
+      "filename": "index.html",
+      "unified_diff": "--- index.html\n+++ index.html\n@@ -3,3 +3,3 @@\n     <meta charset=\"UTF-8\">\n     <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n-    <title>Home | Amateur Chamber Music Society (ACMS) Australia</title>\n+    <title>header</title>\n     <!-- Tailwind CSS -->\n"
+    },
+    {
+      "filename": "sample.json",
+      "unified_diff": "--- sample.json\n+++ sample.json\n@@ -34,6 +34,11 @@\n         \"status\": \"Completed\"\n     },\n     {\n+        \"type\": \"playing-day\",\n+        \"date\": \"3 June\",\n+        \"title\": \"Twinkle\"\n+    },\n+    {\n         \"type\": \"concert\",\n         \"date\": \"14 June 2026\",\n"
+    }
+  ]
+}
+
+*/
+
+
 /**
  * Handles all interactions with the Google Gemini API.
  * This includes loading configuration, constructing prompts, making API calls, and logging.
@@ -29,13 +150,13 @@ class GeminiService {
         $this->updater = $updater;
 
         // Set default configuration values.
-        $this->apiKey = 'YOUR_GEMINI_API_KEY'; // Fallback
-        $this->model = 'gemini-2.5-flash'; // Fallback model
+        $this->apiKey = 'YOUR_GEMINI_API_KEY'; // Fallback API Key
+        $this->model = 'gemini-3.1-pro-preview'; // Fallback model, updated for diff support
         $projectRoot = dirname(DOC_ROOT); // e.g., /path/to/acms.cweb.com.au
         $repoRoot = dirname($projectRoot);    // e.g., /path/to/acms2
         $this->logPath = $repoRoot . '/var/log/gemini'; // Default log path
 
-        $key_file = $projectRoot . '/etc/gemini.json'; // Path to config file
+        $key_file = $projectRoot . '/etc/gemini.json'; // Path to the configuration file
 
         // Override defaults with values from the configuration file if it exists.
         if (file_exists($key_file)) {
@@ -63,49 +184,23 @@ class GeminiService {
      * It constructs a detailed prompt including system instructions, context files, and the user's request.
      * It also handles injecting data source content into the prompt for the AI's context.
      *
-     * @param string $fileContent The original content of the file to be edited.
-     * @param string $filePath The path of the file being edited, for context.
+     * @param array $files An array of files, where each element is an associative array with 'path' and 'content'.
      * @param string $userPrompt The user's instruction for what to change.
-     * @param array $contextFiles An array of other file paths to include for additional context.
-     * @return array An array containing the 'content' (the AI's response) and 'usage' (token metadata).
+     * @return array An array containing 'modified_files' and 'usage' (token metadata).
      * @throws Exception If the API key is not configured or if the API call fails.
      */
-    public function call_gemini_api($fileContent, $filePath, $userPrompt, $contextFiles = array(), $interaction_id = null) {
+    public function call_gemini_api(array $files, $userPrompt) {
         if ($this->apiKey === 'YOUR_GEMINI_API_KEY') {
             throw new Exception('Gemini API key is not configured.');
         }
 
-        $apiKey = $this->apiKey;
-        $model = $this->model;
-        $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$apiKey}";
-
-        // Inject data source content into the file content for the AI to process
-        // but only if a data block doesn't already exist in the content.
-        $dataSourcePathForContext = $this->updater->get_data_source_from_content($fileContent);
-        $dataBlockExists = ($this->updater->extract_data_block($fileContent) !== null);
-
-        if ($dataSourcePathForContext && !$dataBlockExists) {
-            try {
-                $fullDataSourcePath = $this->updater->validate_path($dataSourcePathForContext);
-                if (is_file($fullDataSourcePath)) {
-                    $dataSourceContent = file_get_contents($fullDataSourcePath);
-                    $dataFileComment = "\n<!-- START DATA FILE: " . $dataSourcePathForContext . "\n" . $dataSourceContent . "\nEND DATA FILE: " . $dataSourcePathForContext . " -->";
-                    // Append the data block to the end of the file content.
-                    $fileContent .= $dataFileComment;
-                }
-            } catch (Exception $e) {
-                error_log("Could not inject data source file '$dataSourcePathForContext' for AI processing: " . $e->getMessage());
-            }
-        }
-        
         // Prepare data structure for logging the entire interaction.
         $logData = [
             'timestamp' => date('Y-m-d H:i:s'),
-            'model' => $model,
+            'model' => $this->model,
             'request' => [
                 'userPrompt' => $userPrompt,
-                'contextFiles' => $contextFiles,
-                'fileContent' => $fileContent,
+                'files' => array_map(function($file) { return $file['path']; }, $files),
             ],
             'response' => [],
             'processed' => [],
@@ -114,60 +209,55 @@ class GeminiService {
 
         try {
             // The system prompt provides the AI with its core instructions and constraints.
-            $system_prompt = "You are an expert software engineering AI assistant. I will provide you with the content of a code file and a prompt to modify it. Your task is to return ONLY the complete, modified content of the file. It is crucial that you preserve all existing code, including any JavaScript within <script> tags and CSS within <style> tags, unless the user's request specifically asks to modify them. Do not remove or alter any part of the file that is not directly related to the user's request. Do not include any explanations, comments, or markdown code fences (like ```php or ```html). Just output the raw, updated file content.
+            $system_prompt = "You are an expert web developer. You will receive file contents and a task. Return the modifications as standard Unified Diffs for any changed files. Do not return the full file content.";
 
-    The file may contain a special data block formatted like this:
-    <!-- START DATA FILE: path/to/data.json
-    ... JSON content ...
-    END DATA FILE: path/to/data.json -->
-
-    This block contains the data associated with the page. If my request involves changing data (e.g., 'add a new event', 'update a price'), you MUST update the JSON content inside this comment block accordingly. You MUST preserve the start and end comment markers exactly as they are. The updated data will be extracted and saved automatically.";
-
-            if ($interaction_id) {
-                // This is a follow-up turn in a conversation.
-                $data = [
-                    'model' => $model,
-                    'system_instruction' => $system_prompt,
-                    'input' => $userPrompt,
-                    'previous_interaction_id' => $interaction_id,
-                ];
-            } else {
-                // This is the first turn. Build the full context.
-                $user_message_content = "";
-                // Add any specified context files to the prompt.
-                foreach ($contextFiles as $contextFilePath) {
-                    // Avoid duplicating the main data source if it was already injected and passed in context
-                    if ($contextFilePath === $dataSourcePathForContext) continue;
-                    try {
-                        $fullContextPath = $this->updater->validate_path($contextFilePath);
-                        $content = file_get_contents($fullContextPath);
-                        if (!empty($content)) {
-                            $user_message_content .= "For context, here is the content of '" . $contextFilePath . "':\n```\n" . $content . "\n```\n\n";
-                        }
-                    } catch (Exception $e) {
-                        error_log("Could not include context file '$contextFilePath': " . $e->getMessage());
-                    }
-                }
-
-                // Add the main file content and the user's request to the prompt.
-                $user_message_content .= "File content to edit ('" . $filePath . "'):\n```\n" . $fileContent . "\n```\n\n";
-                $user_message_content .= "My request:\n" . $userPrompt;
-
-                $data = array(
-                    'model' => $model,
-                    'system_instruction' => $system_prompt,
-                    'input' => trim($user_message_content),
-                );
+            $input_parts = [];
+            // The files array now contains both primary and data files, prepared by the caller.
+            foreach ($files as $file) {
+                $input_parts[] = ['type' => 'text', 'text' => "--- FILE: " . $file['path'] . " ---\n" . $file['content']];
             }
+            // Add the task
+            $input_parts[] = ['type' => 'text', 'text' => "--- TASK ---\n" . $userPrompt];
+
+            $response_schema = [
+                'type' => 'object',
+                'properties' => [
+                    'modified_files' => [
+                        'type' => 'array',
+                        'items' => [
+                            'type' => 'object',
+                            'properties' => [
+                                'filename' => ['type' => 'string'],
+                                'unified_diff' => ['type' => 'string']
+                            ],
+                            'required' => ['filename', 'unified_diff']
+                        ]
+                    ]
+                ],
+                'required' => ['modified_files']
+            ];
+
+            $data = [
+                'model' => $this->model,
+                'system_instruction' => $system_prompt,
+                'input' => $input_parts,
+                'response_format' => [
+                    'type' => 'text',
+                    'mime_type' => 'application/json',
+                    'schema' => $response_schema
+                ]
+            ];
 
             $logData['request']['fullPayload'] = $data;
+
+            $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$this->apiKey}";
 
             // Execute the API call using cURL.
             $ch = curl_init($url);
             curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
             curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true); // It's good practice to keep this enabled.
 
             $apiResponse = curl_exec($ch);
             $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -193,52 +283,41 @@ class GeminiService {
 
             $result = json_decode($apiResponse, true);
 
-            // Check for specific API errors.
-            if (!isset($result['status']) || ($result['status'] !== 'completed' && $result['status'] !== 'incomplete')) {
-                $status = $result['status'] ?? 'unknown';
-                $message = 'Interaction did not complete successfully. Status: ' . $status;
-                if (isset($result['error']['message'])) { // Check if there's a more specific error message
-                    $message .= '. Details: ' . $result['error']['message'];
-                }
-                throw new Exception($message);
-            }
-
-            $newContent = null;
+            $modified_files_json = null;
             if (isset($result['steps']) && is_array($result['steps'])) {
                 foreach ($result['steps'] as $step) {
                     if (isset($step['type']) && $step['type'] === 'model_output' && isset($step['content'][0]['text'])) {
-                        $newContent = $step['content'][0]['text'];
-                        break; // Found the content, exit the loop
+                        $modified_files_json = $step['content'][0]['text'];
+                        break;
                     }
                 }
             }
 
-            if ($newContent !== null) {
-                // Successfully received content from the API.
+            if ($modified_files_json !== null) {
+                $modified_files_data = json_decode($modified_files_json, true);
+
+                if (json_last_error() !== JSON_ERROR_NONE || !isset($modified_files_data['modified_files'])) {
+                    throw new Exception("Failed to decode or invalid diff JSON from API: " . $modified_files_json);
+                }
+
                 $usage = $result['usage'] ?? [];
                 $final_usage = [
                     'promptTokenCount' => $usage['total_input_tokens'] ?? 0,
                     'candidatesTokenCount' => $usage['total_output_tokens'] ?? 0,
                     'totalTokens' => $usage['total_tokens'] ?? 0
                 ];
-                $processedContent = trim(preg_replace('/^```[a-z]*\n|\n```$/', '', $newContent));
 
                 $logData['processed'] = [
-                    'extractedContent' => $processedContent,
+                    'extractedContent' => $modified_files_json, // Log the raw JSON with diffs
                     'usage' => $final_usage,
                 ];
-                // Log the successful interaction before returning.
                 $this->log_gemini_interaction($logData);
 
-                $new_interaction_id = $result['id'] ?? null;
-
                 return array(
-                    'content' => $processedContent,
+                    'modified_files' => $modified_files_data['modified_files'],
                     'usage' => $final_usage,
-                    'interaction_id' => $new_interaction_id
                 );
             } elseif (isset($result['promptFeedback']['blockReason'])) {
-                // This may be redundant, but good for fallback.
                 throw new Exception('API request was blocked. Reason: ' . $result['promptFeedback']['blockReason']);
             } else {
                 throw new Exception('Unexpected API response format: ' . $apiResponse);
@@ -251,6 +330,12 @@ class GeminiService {
         }
     }
 
+    /**
+     * Logs the details of a Gemini API interaction to a JSON file.
+     * This is used for debugging and auditing purposes. Logging can be disabled by setting the log path to empty.
+     *
+     * @param array $logData The data to be logged, including request, response, and any errors.
+     */
     private function log_gemini_interaction($logData) {
     /**
      * Logs the details of a Gemini API interaction to a JSON file.
@@ -322,10 +407,148 @@ class TextEditor {
             throw new Exception("Could not find <main> tag in the file to update.");
         }
 
-        $prompt = !empty(trim($comment)) ? $comment : '[Text Editor Update]';
+        if (file_put_contents($fullPath, $newFullContent) === false) {
+            throw new Exception('Failed to save file via Text Editor.');
+        }
 
-        // Use the existing save method to handle backups and writing the file.
-        $this->updater->save_file_content($filePath, $newFullContent, $prompt);
+        $gitService = $this->updater->getGitService();
+        if ($gitService) {
+            $prompt = !empty(trim($comment)) ? $comment : '[Text Editor Update]';
+            $gitService->commitChanges([$filePath], $prompt);
+        }
+    }
+}
+
+/**
+ * Manages all interactions with the Git version control system.
+ */
+class GitService {
+    private $repoRoot;
+
+    /**
+     * GitService constructor.
+     * Finds the git repository root and verifies git is installed.
+     * @throws Exception if not in a git repository or git command is not found.
+     */
+    public function __construct() {
+        $this->repoRoot = $this->find_git_root(DOC_ROOT);
+        if ($this->repoRoot === null) {
+            // Check if git command exists to give a more specific error
+            exec('command -v git', $output, $return_var);
+            if ($return_var !== 0) {
+                throw new Exception("The 'git' command is not available on this server.");
+            }
+            throw new Exception("The project is not a git repository. Git-based versioning is disabled.");
+        }
+    }
+
+    /**
+     * Finds the root directory of the git repository by searching upwards from a starting directory.
+     * @param string $start_dir The directory to start searching from.
+     * @return string|null The path to the repo root, or null if not found.
+     */
+    private function find_git_root($start_dir) {
+        $dir = $start_dir;
+        // Go up the directory tree until we find a .git directory or hit the filesystem root.
+        while ($dir !== '/' && $dir !== '' && !is_dir($dir . '/.git')) {
+            $parent = dirname($dir);
+            if ($parent === $dir) { // Reached the top of the filesystem
+                return null;
+            }
+            $dir = $parent;
+        }
+        return (is_dir($dir . '/.git')) ? $dir : null;
+    }
+
+    /**
+     * Executes a shell command in the git repository root.
+     * @param string $command The command to execute.
+     * @return array The output from the command.
+     * @throws Exception if the command fails.
+     */
+    private function execute($command) {
+        // All commands should be run from the repo root. Redirect stderr to stdout to capture errors.
+        $full_command = 'cd ' . escapeshellarg($this->repoRoot) . ' && ' . $command . ' 2>&1';
+        exec($full_command, $output, $return_var);
+        if ($return_var !== 0) {
+            throw new Exception("Git command failed with code $return_var: $command\nOutput: " . implode("\n", $output));
+        }
+        return $output;
+    }
+
+    /**
+     * Commits specified files with a given prompt as the message.
+     * @param array $files Array of file paths relative to DOC_ROOT.
+     * @param string $prompt The commit message.
+     */
+    public function commitChanges(array $files, $prompt) {
+        foreach ($files as $filePath) {
+            $absolutePath = realpath(DOC_ROOT . '/' . $filePath);
+            if (!$absolutePath) continue; // Skip if file doesn't exist (e.g., it was just created)
+            $this->execute('git add ' . escapeshellarg($absolutePath));
+        }
+
+        $status_output = $this->execute('git status --porcelain');
+        if (empty($status_output)) {
+            return; // Nothing to commit
+        }
+
+        $commit_message = "[WebRobot] " . $prompt;
+        $this->execute('git commit -m ' . escapeshellarg($commit_message));
+    }
+
+    /**
+     * Lists the commit history for a specific file.
+     * @param string $filePath The file path relative to DOC_ROOT.
+     * @return array A list of commits.
+     */
+    public function listHistory($filePath) {
+        $absolutePath = realpath(DOC_ROOT . '/' . $filePath);
+        if (!$absolutePath) {
+            return []; // File doesn't exist, so no history.
+        }
+        $relativePath = str_replace($this->repoRoot . '/', '', $absolutePath);
+
+        $separator = '|||';
+        $format = '%H' . $separator . '%ai' . $separator . '%s';
+        $command = 'git log --pretty=format:"' . $format . '" -- ' . escapeshellarg($relativePath);
+
+        try {
+            $log_output = $this->execute($command);
+        } catch (Exception $e) {
+            // If the file is not in git history, log might fail. Return empty.
+            error_log("Git log failed for $filePath: " . $e->getMessage());
+            return [];
+        }
+
+        $history = [];
+        $current_hash_output = $this->execute('git rev-parse HEAD');
+        $current_hash = trim($current_hash_output[0]);
+
+        foreach ($log_output as $line) {
+            list($hash, $date, $subject) = explode($separator, $line, 3);
+            $history[] = [
+                'file' => $hash, // Use hash as the identifier for rollback
+                'date' => $date,
+                'prompt' => $subject,
+                'is_current' => ($hash === $current_hash),
+            ];
+        }
+        return $history;
+    }
+
+    /**
+     * Rolls back a file to a specific commit.
+     * @param string $commitHash The commit hash to revert to.
+     * @param string $filePath The file path to revert.
+     */
+    public function rollback($commitHash, $filePath) {
+        $absolutePath = realpath(DOC_ROOT . '/' . $filePath);
+        if (!$absolutePath) {
+            throw new Exception("File to rollback does not exist: $filePath");
+        }
+        $relativePath = str_replace($this->repoRoot . '/', '', $absolutePath);
+        $this->execute('git checkout ' . escapeshellarg($commitHash) . ' -- ' . escapeshellarg($relativePath));
     }
 }
 
@@ -337,6 +560,8 @@ class WebRobotUpdater {
 
     /** @var GeminiService The service used to interact with the Gemini API. */
     private $geminiService;
+    /** @var GitService|null The service for Git version control. */
+    private $gitService;
 
     /**
      * WebRobotUpdater constructor.
@@ -345,6 +570,18 @@ class WebRobotUpdater {
      */
     public function __construct() {
         $this->geminiService = new GeminiService($this);
+        try {
+            $this->gitService = new GitService();
+        } catch (Exception $e) {
+            // If Git isn't set up, we can't use versioning. Log the error.
+            error_log("GitService initialization failed: " . $e->getMessage());
+            $this->gitService = null;
+        }
+    }
+
+    /** @return GitService|null */
+    public function getGitService() {
+        return $this->gitService;
     }
 
     /**
@@ -357,7 +594,7 @@ class WebRobotUpdater {
      * @return array An array containing a success message and total token usage.
      * @throws Exception If no target files are specified.
      */
-    public function generateAndSave($prompt, $target_files, $update_all_html, $interaction_id = null) {
+    public function generateAndSave($prompt, $target_files, $update_all_html) {
         $files_to_process = array();
 
         // Determine the list of files to process based on user input.
@@ -379,37 +616,63 @@ class WebRobotUpdater {
              throw new Exception('No target files specified for update.');
         }
 
-        $is_batch_job = $update_all_html || count($files_to_process) > 1;
-        if ($is_batch_job) {
-            $interaction_id = null; // Force stateless for batch jobs
+        $files_for_api = [];
+        $data_source_paths = [];
+
+        // Add primary files and collect their data source paths
+        foreach ($files_to_process as $filePath) {
+            $fullPath = $this->validate_path($filePath);
+            if (!is_file($fullPath)) {
+                error_log("Skipping non-existent file in generateAndSave: " . $filePath);
+                continue;
+            }
+            $content = file_get_contents($fullPath);
+            $files_for_api[] = [
+                'path' => $filePath,
+                'content' => $content
+            ];
+            $dataSourcePath = $this->get_data_source_from_content($content);
+            if ($dataSourcePath) {
+                $data_source_paths[] = $dataSourcePath;
+            }
         }
 
-        $updated_files_count = 0;
-        $total_usage = array('totalTokens' => 0);
-        $new_interaction_id = null;
-
-        // Loop through each file, call the AI, and save the result.
-        foreach($files_to_process as $filePath) {
-            $fullPath = $this->validate_path($filePath);
-            if (!is_file($fullPath)) continue;
-            $contentToEdit = file_get_contents($fullPath);
-            
-            $geminiResult = $this->geminiService->call_gemini_api($contentToEdit, $filePath, $prompt, array(), $interaction_id);
-            $newContent = $geminiResult['content'];
-            $this->save_file_content($filePath, $newContent, $prompt);
-            $updated_files_count++;
-
-            if (isset($geminiResult['usage']['totalTokens'])) {
-                $total_usage['totalTokens'] += $geminiResult['usage']['totalTokens'];
+        // Add unique data source files to the context
+        $unique_data_sources = array_unique($data_source_paths);
+        foreach ($unique_data_sources as $dataSourcePath) {
+            try {
+                $fullDataSourcePath = $this->validate_path($dataSourcePath);
+                if (is_file($fullDataSourcePath)) {
+                    $files_for_api[] = [
+                        'path' => $dataSourcePath,
+                        'content' => file_get_contents($fullDataSourcePath)
+                    ];
+                }
+            } catch (Exception $e) {
+                error_log("Could not include data source file '$dataSourcePath' for AI processing: " . $e->getMessage());
             }
-            // For single file calls, we'll get the new ID. For batch, it will be null.
-            $new_interaction_id = $geminiResult['interaction_id'];
+        }
+
+        if (empty($files_for_api)) {
+            throw new Exception('No valid files found to process.');
+        }
+        
+        $geminiResult = $this->geminiService->call_gemini_api($files_for_api, $prompt);
+        
+        $updated_files_count = 0;
+        $files_to_commit = [];
+        foreach ($geminiResult['modified_files'] as $file_to_patch) {
+            $this->apply_diff_and_save($file_to_patch['filename'], $file_to_patch['unified_diff']);
+            $files_to_commit[] = $file_to_patch['filename'];
+            $updated_files_count++;
+        }
+        if ($this->gitService && !empty($files_to_commit)) {
+            $this->gitService->commitChanges($files_to_commit, $prompt);
         }
         
         return [
             'message' => "$updated_files_count file(s) updated successfully by AI.",
-            'usage' => $total_usage,
-            'interaction_id' => $new_interaction_id
+            'usage' => $geminiResult['usage'],
         ];
     }
 
@@ -421,78 +684,10 @@ class WebRobotUpdater {
      * @return array A sorted list of backup file details (path, date, prompt, is_current).
      */
     public function listBackups($filePath) {
-        $fullPath = $this->validate_path($filePath);
-        if (!file_exists($fullPath)) {
-            return array();
+        if ($this->gitService) {
+            return $this->gitService->listHistory($filePath);
         }
-
-        // Prepare both clean and hydrated versions of the current content for comparison.
-        $currentContentClean = null;
-        $currentContentHydrated = null;
-        if (file_exists($fullPath)) {
-            $currentContentClean = file_get_contents($fullPath);
-            $currentContentHydrated = $currentContentClean; // Start with the clean content
-            $dataSourcePath = $this->get_data_source_from_content($currentContentClean);
-            if ($dataSourcePath) {
-                try {
-                    $fullDataSourcePath = $this->validate_path($dataSourcePath);
-                    if (is_file($fullDataSourcePath)) {
-                        $dataSourceContent = file_get_contents($fullDataSourcePath);
-                        $dataFileComment = "\n<!-- START DATA FILE: " . $dataSourcePath . "\n" . $dataSourceContent . "\nEND DATA FILE: " . $dataSourcePath . " -->";
-                        $currentContentHydrated .= $dataFileComment;
-                    }
-                } catch (Exception $e) {
-                    error_log("Could not create current content for comparison in list_backups: " . $e->getMessage());
-                    // If hydration fails, fall back to clean content for hydrated comparison as well.
-                    $currentContentHydrated = $currentContentClean;
-                }
-            }
-        }
-
-        $backupFiles = glob($fullPath . '.bak.*');
-        $backups = array();
-        if (!empty($backupFiles)) {
-            // Sort numerically based on the backup number, descending
-            usort($backupFiles, function($a, $b) {
-                $numA = intval(substr(strrchr($a, '.'), 1));
-                $numB = intval(substr(strrchr($b, '.'), 1));
-                return $numB - $numA;
-            });
-            
-            foreach ($backupFiles as $backupFile) {
-                $backupNumStr = substr(strrchr($backupFile, '.'), 1);
-                $promptFile = $fullPath . '.prompt.' . $backupNumStr;
-                $prompt = null;
-                if (file_exists($promptFile)) {
-                    $prompt = file_get_contents($promptFile);
-                }
-
-                // Compare the backup content with the appropriate version of the current file.
-                $backupContent = file_get_contents($backupFile);
-                $backupHasDataBlock = ($this->extract_data_block($backupContent) !== null);
-
-                $isCurrent = false;
-                if ($backupHasDataBlock) {
-                    // Backup has a data block, so compare it against the hydrated version of the current file.
-                    if ($currentContentHydrated !== null) {
-                        $isCurrent = (trim($backupContent) === trim($currentContentHydrated));
-                    }
-                } else {
-                    // Backup does NOT have a data block, compare it against the clean version of the current file.
-                    if ($currentContentClean !== null) {
-                        $isCurrent = (trim($backupContent) === trim($currentContentClean));
-                    }
-                }
-
-                $backups[] = array(
-                    'file' => str_replace(DOC_ROOT . DIRECTORY_SEPARATOR, '', $backupFile),
-                    'date' => date("Y-m-d H:i:s", filemtime($backupFile)),
-                    'prompt' => $prompt,
-                    'is_current' => $isCurrent,
-                );
-            }
-        }
-        return $backups;
+        return [];
     }
 
     /**
@@ -500,42 +695,14 @@ class WebRobotUpdater {
      * This is an atomic operation that also restores the associated data file if it was part of the backup.
      *
      * @param string $filePath The relative path to the file to be rolled back.
-     * @param string $backupFilePath The relative path to the backup file to restore from.
+     * @param string $backupFileIdentifier The identifier for the backup (commit hash).
      * @throws Exception If the backup file is invalid or if the rollback fails.
      */
-    public function rollbackFile($filePath, $backupFilePath) {
-        $fullPath = $this->validate_path($filePath);
-        $backupFullPath = $this->validate_path($backupFilePath);
-
-        if (!file_exists($backupFullPath) || strpos($backupFullPath, $fullPath . '.bak.') !== 0) {
-            throw new Exception('Invalid backup file specified.');
+    public function rollbackFile($filePath, $backupFileIdentifier) {
+        if (!$this->gitService) {
+            throw new Exception("Git service is not available for rollback.");
         }
-
-        $backupContent = file_get_contents($backupFullPath);
-
-        // New logic: Extract data from the backup content and restore it.
-        // This makes the data and HTML file atomic for rollbacks.
-        $dataBlock = $this->extract_data_block($backupContent);
-        if ($dataBlock) {
-            $dataSourcePath = $dataBlock['path'];
-            $dataSourceContent = $dataBlock['content'];
-            try {
-                $dataFullPath = $this->validate_path($dataSourcePath);
-                if (file_put_contents($dataFullPath, $dataSourceContent) === false) {
-                    throw new Exception('Failed to roll back associated data file from backup content.');
-                }
-            } catch (Exception $e) {
-                throw new Exception("Error rolling back data source '$dataSourcePath': " . $e->getMessage());
-            }
-        }
-
-        // Save the live file with the data block removed.
-        $contentForFile = preg_replace('/<!--\s*START DATA FILE:.*?END DATA FILE:.*?-->/s', '', $backupContent);
-        $contentForFile = trim($contentForFile);
-
-        if (file_put_contents($fullPath, $contentForFile) === false) {
-            throw new Exception('Failed to roll back main file.');
-        }
+        $this->gitService->rollback($backupFileIdentifier, $filePath);
     }
 
     /**
@@ -600,90 +767,72 @@ class WebRobotUpdater {
     }
 
     /**
-     * Saves new content to a file and manages the backup process.
+     * Applies a unified diff to a string of original content using the command-line `patch` utility.
      *
-     * This function performs several key steps:
-     * 1. Creates an initial backup (.bak.0) of the original file if one doesn't exist.
-     * 2. Extracts any data block from the new AI-generated content and saves it to its own file.
-     * 3. Creates a new versioned backup (.bak.N) containing the full AI response (HTML + data block).
-     * 4. Saves the "clean" HTML (with the data block removed) to the live file.
-     *
-     * @param string $filePath The relative path of the file to save.
-     * @param string $content The new content, potentially including an embedded data block.
-     * @param string|null $prompt The prompt that generated this content, to be saved alongside the backup.
-     * @throws Exception On file system errors (e.g., failed to write).
+     * @param string $original_content The original content.
+     * @param string $diff The unified diff string.
+     * @return string The new content after applying the diff.
+     * @throws Exception if the `patch` command is not available or fails.
      */
-    public function save_file_content($filePath, $content, $prompt = null) {
+    private function apply_diff($original_content, $diff) {
+        // Check if `patch` command exists. This is a basic security and functionality check.
+        exec('command -v patch', $output, $return_var);
+        if ($return_var !== 0) {
+            throw new Exception('The `patch` command is not available on this server. Cannot apply diff.');
+        }
+
+        // Create temporary files for the original content and the diff.
+        $originalFile = tempnam(sys_get_temp_dir(), 'webrbt_orig_');
+        $diffFile = tempnam(sys_get_temp_dir(), 'webrbt_diff_');
+        $outputFile = tempnam(sys_get_temp_dir(), 'webrbt_out_');
+
+        // Ensure temporary files are removed on script exit, even if errors occur.
+        register_shutdown_function(function() use ($originalFile, $diffFile, $outputFile) {
+            if (file_exists($originalFile)) unlink($originalFile);
+            if (file_exists($diffFile)) unlink($diffFile);
+            if (file_exists($outputFile)) unlink($outputFile);
+        });
+
+        // Write content to temp files
+        file_put_contents($originalFile, $original_content);
+        file_put_contents($diffFile, $diff);
+
+        // The `-o` flag tells patch to write the output to a file instead of modifying in-place.
+        // This is much safer. We also use `--fuzz=0` to be strict and avoid partial patches.
+        $command = sprintf(
+            'patch --fuzz=0 -o %s %s %s',
+            escapeshellarg($outputFile),
+            escapeshellarg($originalFile),
+            escapeshellarg($diffFile)
+        );
+
+        // Execute the command
+        exec($command, $cmd_output, $return_var);
+
+        // Get the patched content before cleaning up
+        $new_content = file_get_contents($outputFile);
+
+        // Check for errors. `patch` returns 0 for success.
+        // A return value of 1 means some hunks failed (fuzz patching), 2 means serious trouble.
+        if ($return_var !== 0) {
+            $error_message = "Patch command failed with return code $return_var.\\n";
+            $error_message .= "This can happen if the diff does not perfectly match the file content.\\n";
+            $error_message .= "Command Output:\\n" . implode("\\n", $cmd_output);
+            throw new Exception($error_message);
+        }
+
+        return $new_content;
+    }
+
+    private function apply_diff_and_save($filePath, $diff) {
         $fullPath = $this->validate_path($filePath);
-        
         $isNewFile = !is_file($fullPath);
+        $original_content = $isNewFile ? "" : file_get_contents($fullPath);
 
-        // --- Pre-Step: Handle initial backup (.bak.0) for existing files BEFORE any modifications.
-        if (!$isNewFile && !file_exists($fullPath . '.bak.0')) {
-            $oldContent = file_get_contents($fullPath);
-            $dataSourcePath = $this->get_data_source_from_content($oldContent);
-
-            // To ensure the initial backup is clean, strip any pre-existing data block from the original content.
-            $contentForBak0 = preg_replace('/<!--\s*START DATA FILE:.*?END DATA FILE:.*?-->/s', '', $oldContent);
-            $contentForBak0 = trim($contentForBak0);
-
-            // Always (re)inject the data block from the ORIGINAL source file.
-            if ($dataSourcePath) {
-                try {
-                    $fullDataSourcePath = $this->validate_path($dataSourcePath);
-                    if (is_file($fullDataSourcePath)) {
-                        // Read the data file BEFORE it's modified later in this function.
-                        $originalDataSourceContent = file_get_contents($fullDataSourcePath);
-                        $dataFileComment = "\n<!-- START DATA FILE: " . $dataSourcePath . "\n" . $originalDataSourceContent . "\nEND DATA FILE: " . $dataSourcePath . " -->";
-                        $contentForBak0 .= $dataFileComment;
-                    }
-                } catch (Exception $e) {
-                    // Log error but don't halt the process. The backup will just be missing the data block.
-                    error_log("Could not inject data block into initial backup for '" . htmlspecialchars($filePath) . "': " . $e->getMessage());
-                }
-            }
-            if (file_put_contents($fullPath . '.bak.0', $contentForBak0) === false) {
-                throw new Exception("Failed to create initial backup for: " . $fullPath);
-            }
-            file_put_contents($fullPath . '.prompt.0', '[initial version]');
-        }
-
-        // --- Step 1: Extract data and save the data file. This is always needed.
-        $dataBlock = $this->extract_data_block($content);
-        if ($dataBlock) {
-            $extractedDataSourcePath = $dataBlock['path'];
-            $extractedDataSourceContent = $dataBlock['content'];
-            try {
-                $extractedDataFullPath = $this->validate_path($extractedDataSourcePath);
-                if (file_put_contents($extractedDataFullPath, $extractedDataSourceContent) === false) {
-                    throw new Exception("Failed to save extracted data to: " . htmlspecialchars($extractedDataSourcePath));
-                }
-            } catch (Exception $e) {
-                throw new Exception("Could not save extracted data source '" . htmlspecialchars($extractedDataSourcePath) . "': " . $e->getMessage());
-            }
-        }
-
-        // --- Step 2: Prepare the content for the live HTML file (data block removed).
-        $contentForFile = preg_replace('/<!--\s*START DATA FILE:.*?END DATA FILE:.*?-->/s', '', $content);
-        $contentForFile = trim($contentForFile);
-
-        // --- Step 3: Handle backups if it's an existing file.
-        if (!$isNewFile) {
-            // Regular Backup of API response
-            $i = 1;
-            while (file_exists($fullPath . '.bak.' . $i)) $i++;
-            
-            if (file_put_contents($fullPath . '.bak.' . $i, $content) === false) { // Backup new content with data block
-                throw new Exception("Failed to create backup for: " . $fullPath);
-            }
-            if ($prompt) {
-                file_put_contents($fullPath . '.prompt.' . $i, $prompt);
-            }
-        }
-
-        // --- Step 4: Save the live HTML file.
-        if (file_put_contents($fullPath, $contentForFile) === false) {
-            throw new Exception('Failed to save file.');
+        $newContent = $this->apply_diff($original_content, $diff);
+        
+        if (file_put_contents($fullPath, $newContent) === false) {
+            throw new Exception('Failed to save file: ' . $filePath);
         }
     }
 
@@ -711,12 +860,10 @@ try {
             $prompt = isset($data['prompt']) ? $data['prompt'] : '';
             $target_files = isset($data['target_files']) ? $data['target_files'] : array();
             $update_all_html = isset($data['update_all_html']) ? $data['update_all_html'] : false;
-            $interaction_id = isset($data['interaction_id']) ? $data['interaction_id'] : null;
             
-            $result = $updater->generateAndSave($prompt, $target_files, $update_all_html, $interaction_id);
+            $result = $updater->generateAndSave($prompt, $target_files, $update_all_html);
             $response['message'] = $result['message'];
             $response['usage'] = $result['usage'];
-            $response['interaction_id'] = $result['interaction_id'];
             break;
         case 'save_text_edit':
             $data = json_decode(file_get_contents('php://input'), true);
