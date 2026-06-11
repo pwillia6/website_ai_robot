@@ -1,65 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!--#include virtual="includes/head-common.html" -->
     <title>Descriptive Self-Grader | Amateur Chamber Music Society (ACMS) Australia</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="js/tailwind-config.js"></script>
-    <!-- Google Fonts: Merriweather for Serif & Inter for Sans -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,300;0,400;0,700;1,300&display=swap" rel="stylesheet">
-    <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="css/style.css">
-    <meta name="data-source" content="data/events-data.json"></head>
+    <meta name="data-source" content="data/events-data.json">
+</head>
 <body class="bg-stone-50 text-stone-800 font-sans min-h-screen flex flex-col antialiased">
 
-    <!-- TOP HEADER: Premium Dark Green-Charcoal Background for Logo & Navigation -->
-    <header class="bg-[#080d0a] text-white border-b border-brandGreen-950 shadow-lg sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
-                <!-- Brand / Logo Area with Rich Dark Background -->
-                <a href="index.html" class="relative cursor-pointer">
-                    <img src="images/logo-notext.png" alt="ACMS Logo" class="h-16 mb-[5px]">
-                    <div class="absolute top-[62%] left-[74%] whitespace-nowrap">
-                        <span class="text-[9px] uppercase tracking-widest text-white font-bold block leading-tight">Amateur Chamber<br>Music Society</span>
-                    </div>
-                </a>
-
-                <!-- Desktop Navigation Menu -->
-                <nav class="hidden lg:flex space-x-1">
-                    <a href="index.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="home">Home</a>
-                    <a href="about.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="about">About Us</a>
-                    <a href="playing-days.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="playing">Playing Days</a>
-                    <a href="music-camp.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="camp">Music Camp</a>
-                    <a href="concerts.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="concerts">Concerts</a>
-                    <a href="library.html" class="nav-btn px-3 py-2 rounded-md text-sm font-medium transition duration-150 hover:bg-stone-900 hover:text-white" data-tab="library">Music Library</a>
-                    <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="nav-btn px-3 py-2 bg-brandTeal-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandTeal-600 hover:shadow-md ml-2">Members Area</a>
-                    <a href="join.html" class="nav-btn px-3 py-2 bg-brandGreen-700 text-white rounded-md text-sm font-semibold tracking-wide shadow transition duration-150 hover:bg-brandGreen-600 hover:shadow-md" data-tab="join">Join / Self-Grader</a>
-                </nav>
-
-                <!-- Mobile Menu Button -->
-                <div class="lg:hidden">
-                    <button id="mobile-menu-toggle" class="text-stone-300 hover:text-white focus:outline-none focus:text-white p-2" aria-label="Toggle Menu">
-                        <i class="fa-solid fa-bars text-2xl"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Mobile Dropdown Navigation Menu -->
-        <div id="mobile-menu" class="hidden lg:hidden bg-stone-950 border-t border-stone-850 px-4 pt-2 pb-4 space-y-1 shadow-inner">
-            <a href="index.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="home">Home</a>
-            <a href="about.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="about">About Us & History</a>
-            <a href="playing-days.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="playing">Playing Days & Pianists Guide</a>
-            <a href="music-camp.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="camp">Residential Camp</a>
-            <a href="concerts.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="concerts">Concerts & Performance Advice</a>
-            <a href="library.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 rounded-md text-base font-medium hover:bg-stone-900" data-tab="library">Music Library Catalog</a>
-            <a href="https://www8.acms-australia.org/admidio/adm_program/index.php" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandTeal-800 text-white rounded-md text-base font-semibold tracking-wide">Members Area</a>
-            <a href="join.html" class="mobile-nav-btn block w-full text-left px-3 py-2.5 bg-brandGreen-800 text-brandTeal-300 rounded-md text-base font-semibold tracking-wide" data-tab="join">Join Us &amp; Self-Grader</a>
-        </div>
-    </header>
+    <!--#include virtual="includes/header.html" -->
 
     <!-- MAIN APP CANVAS CONTAINER -->
     <main class="flex-grow max-w-4xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -169,32 +117,8 @@
 
     </main>
 
-    <!-- FLOATING POPUP NOTIFICATION (Replacement for Browser Alerts) -->
-    <div id="toast" class="hidden fixed bottom-6 right-6 bg-stone-900 text-white px-5 py-4 rounded-xl shadow-2xl border border-stone-850 max-w-sm z-50 flex items-start space-x-3 transition duration-300">
-        <div class="bg-stone-800 text-brandGreen-400 p-1.5 rounded-lg text-sm" id="toast-icon">
-            <i class="fa-solid fa-bell"></i>
-        </div>
-        <div class="space-y-1">
-            <strong class="text-xs font-serif block text-white" id="toast-title">Notification</strong>
-            <p class="text-stone-300 text-[11px] leading-relaxed" id="toast-body">Message context goes here.</p>
-        </div>
-    </div>
-
-    <!-- FOOTER -->
-    <footer class="bg-black text-stone-500 text-xs py-6 border-t border-stone-900 text-center mt-12">
-        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p>&copy; 2026 Amateur Chamber Music Society Incorporated (ACMS). All rights reserved.</p>
-            <div class="space-x-4">
-                <a href="https://www.acms-australia.org/download_file/view/496/246" class="hover:underline">ACMS Constitution</a>
-                <span>&bull;</span>
-                <span class="text-stone-600">Built for amateur chamber music development</span>
-            </div>
-        </div>
-    </footer>
-
+    <!--#include virtual="includes/footer.html" --> 
     <!-- ==================== LOGIC / JS CONTROLLERS ==================== -->
-    <script src="js/main.js"></script>
     <script src="js/descriptive-grader.js"></script>
-    <script src="js/editor.js"></script>
 </body>
 </html>

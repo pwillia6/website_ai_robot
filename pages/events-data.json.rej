@@ -1,0 +1,17 @@
+--- events-data.json
++++ events-data.json
+@@ -8,6 +8,14 @@
+         "registration_closes": "9 February 2026",
+         "status": "Completed"
+     },
++    {
++        "type": "playing-day",
++        "region": "sydney",
++        "date": "10 March",
++        "title": "Sydney Playing Day",
++        "venue": "Barker College, Waitara",
++        "status": "Provisional"
++    },
+     {
+         "type": "playing-day",
+         "region": "sydney",

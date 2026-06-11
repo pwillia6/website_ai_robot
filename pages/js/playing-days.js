@@ -160,13 +160,6 @@ function setupPlayingDaysListeners() {
         btn.addEventListener('click', () => switchRegion(regionId));
     });
 
-    // Composer search input
-    const searchInput = document.getElementById('composer-search');
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            renderPianistRepertoire(searchInput.value);
-        });
-    }
 }
 
 // --- Data Initialization ---
@@ -176,7 +169,6 @@ async function initializePlayingDaysData() {
         // The playing-days-data.json for repertoire is no longer loaded.
         allEventsData = await fetchJSON('data/events-data.json') || [];
 
-        renderPianistRepertoire();
         renderSydneySchedule();
         renderCanberraSchedule();
         renderBrisbaneSchedule();

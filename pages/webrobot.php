@@ -800,7 +800,7 @@ class WebRobotUpdater {
         // The `-o` flag tells patch to write the output to a file instead of modifying in-place.
         // This is much safer. We also use `--fuzz=0` to be strict and avoid partial patches.
         $command = sprintf(
-            'patch --fuzz=0 -o %s %s %s',
+            'patch -p1 -o %s %s %s',
             escapeshellarg($outputFile),
             escapeshellarg($originalFile),
             escapeshellarg($diffFile)
