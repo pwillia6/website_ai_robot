@@ -124,6 +124,76 @@ Generating payload and calling the Interactions API...
 
 */
 
+/**
+ * Handles logging for the WebRobot.
+ * It creates a single log file per request and allows different services to add to it.
+ */
+class LogService {
+    private $logPath;
+    private $logFile;
+    private $logData = [];
+
+    public function __construct() {
+        $projectRoot = dirname(DOC_ROOT);
+        $repoRoot = dirname($projectRoot);
+        $this->logPath = $repoRoot . '/var/log/gemini'; // Default log path
+
+        $key_file = $projectRoot . '/etc/gemini.json';
+        if (file_exists($key_file)) {
+            $key_data = json_decode(file_get_contents($key_file), true);
+            if (isset($key_data['log_path'])) {
+                $this->logPath = $key_data['log_path'];
+            }
+        }
+
+        if (empty($this->logPath) || !is_dir($this->logPath) || !is_writable($this->logPath)) {
+            $this->logPath = null; // Disable logging
+            return;
+        }
+
+        $this->logFile = $this->logPath . '/' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.json';
+        $this->logData = [
+            'timestamp' => date('Y-m-d H:i:s'),
+            'request' => [],
+            'exec' => [],
+            'response' => [],
+            'processed' => [],
+            'error' => null,
+        ];
+    }
+
+    public function log($key, $data) {
+        if ($key === 'exec') {
+            $this->logData['exec'][] = $data;
+        } else {
+            $this->logData[$key] = array_merge($this->logData[$key] ?? [], $data);
+        }
+        $this->writeLog();
+    }
+
+    public function setError($message) {
+        $this->logData['error'] = $message;
+        $this->writeLog();
+    }
+
+    private function writeLog() {
+        if (!$this->logPath) {
+            return;
+        }
+
+        try {
+            $logDataCopy = $this->logData;
+            array_walk_recursive($logDataCopy, function (&$item) {
+                if (is_string($item)) {
+                    $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
+                }
+            });
+            file_put_contents($this->logFile, json_encode($logDataCopy, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        } catch (Exception $e) {
+            error_log("Failed to write to log file {$this->logFile}: " . $e->getMessage());
+        }
+    }
+}
 
 /**
  * Handles all interactions with the Google Gemini API.
@@ -131,51 +201,34 @@ Generating payload and calling the Interactions API...
  */
 class GeminiService {
     /** @var WebRobotUpdater An instance of the updater class to access helper methods. */
-    private $updater;
     /** @var string The API key for the Gemini service. */
     private $apiKey;
     /** @var string The Gemini model to be used for content generation. */
     private $model;
-    /** @var string The absolute path for logging Gemini API interactions. */
-    private $logPath;
+    /** @var LogService The logging service instance. */
+    private $logger;
 
     /**
      * GeminiService constructor.
      * Initializes the Gemini service by loading configuration from the /etc/gemini.json file.
      * It sets up the API key, model, and log path, with fallbacks for each.
      *
-     * @param WebRobotUpdater $updater An instance of WebRobotUpdater to access its helper methods.
+     * @param LogService $logger An instance of the LogService.
      */
-    public function __construct(WebRobotUpdater $updater) {
-        $this->updater = $updater;
+    public function __construct(LogService $logger) {
+        $this->logger = $logger;
 
         // Set default configuration values.
         $this->apiKey = 'YOUR_GEMINI_API_KEY'; // Fallback API Key
         $this->model = 'gemini-3.1-pro-preview'; // Fallback model, updated for diff support
         $projectRoot = dirname(DOC_ROOT); // e.g., /path/to/acms.cweb.com.au
-        $repoRoot = dirname($projectRoot);    // e.g., /path/to/acms2
-        $this->logPath = $repoRoot . '/var/log/gemini'; // Default log path
-
         $key_file = $projectRoot . '/etc/gemini.json'; // Path to the configuration file
 
         // Override defaults with values from the configuration file if it exists.
         if (file_exists($key_file)) {
-            $json_content = file_get_contents($key_file);
-            $key_data = json_decode($json_content, true);
-            if (!empty($key_data['key'])) {
-                $this->apiKey = $key_data['key'];
-            }
-            if (!empty($key_data['model'])) {
-                $this->model = $key_data['model'];
-            }
-            if (isset($key_data['log_path'])) {
-                if (empty($key_data['log_path'])) {
-                    $this->logPath = ''; // Disable logging by setting path to empty
-                } else {
-                    // The path in the config is the absolute path.
-                    $this->logPath = $key_data['log_path'];
-                }
-            }
+            $key_data = json_decode(file_get_contents($key_file), true);
+            $this->apiKey = $key_data['key'] ?? $this->apiKey;
+            $this->model = $key_data['model'] ?? $this->model;
         }
     }
 
@@ -194,20 +247,13 @@ class GeminiService {
             throw new Exception('Gemini API key is not configured.');
         }
 
-        // Prepare data structure for logging the entire interaction.
-        $logData = [
-            'timestamp' => date('Y-m-d H:i:s'),
+        $this->logger->log('request', [
             'model' => $this->model,
             'request' => [
                 'userPrompt' => $userPrompt,
                 'files' => array_map(function($file) { return $file['path']; }, $files),
             ],
-            'response' => [],
-            'processed' => [],
-            'error' => null,
-        ];
-
-        try {
+        ]);
             // The system prompt provides the AI with its core instructions and constraints.
             $system_prompt = "You are an expert web developer. You will receive file contents and a task. Return the modifications as standard Unified Diffs for any changed files. Do not return the full file content.";
 
@@ -248,7 +294,9 @@ class GeminiService {
                 ]
             ];
 
-            $logData['request']['fullPayload'] = $data;
+            $this->logger->log('request', [
+                'fullPayload' => $data
+            ]);
 
             $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$this->apiKey}";
 
@@ -267,11 +315,11 @@ class GeminiService {
             error_log("Gemini API Call: URL=" . $url . " | HTTP Code=" . $httpCode);
 
             // Log the raw response details.
-            $logData['response'] = [
+            $this->logger->log('response', [
                 'httpCode' => $httpCode,
                 'rawResponse' => $apiResponse,
                 'curlError' => $curlError ?: null,
-            ];
+            ]);
 
             if ($apiResponse === false) {
                 throw new Exception('cURL Error: ' . $curlError);
@@ -307,11 +355,10 @@ class GeminiService {
                     'totalTokens' => $usage['total_tokens'] ?? 0
                 ];
 
-                $logData['processed'] = [
+                $this->logger->log('processed', [
                     'extractedContent' => $modified_files_json, // Log the raw JSON with diffs
                     'usage' => $final_usage,
-                ];
-                $this->log_gemini_interaction($logData);
+                ]);
 
                 return array(
                     'modified_files' => $modified_files_data['modified_files'],
@@ -322,52 +369,6 @@ class GeminiService {
             } else {
                 throw new Exception('Unexpected API response format: ' . $apiResponse);
             }
-        } catch (Exception $e) {
-            // Catch any exception, log it, and re-throw it to be handled by the caller.
-            $logData['error'] = $e->getMessage();
-            $this->log_gemini_interaction($logData);
-            throw $e;
-        }
-    }
-
-    /**
-     * Logs the details of a Gemini API interaction to a JSON file.
-     * This is used for debugging and auditing purposes. Logging can be disabled by setting the log path to empty.
-     *
-     * @param array $logData The data to be logged, including request, response, and any errors.
-     */
-    private function log_gemini_interaction($logData) {
-    /**
-     * Logs the details of a Gemini API interaction to a JSON file.
-     * This is used for debugging and auditing purposes. Logging can be disabled by setting the log path to empty.
-     *
-     * @param array $logData The data to be logged, including request, response, and any errors.
-     */
-        try {
-            $logDir = $this->logPath;
-            if (empty($logDir) || !is_dir($logDir) || !is_writable($logDir)) {
-                // If path is empty or the directory doesn't exist, do not log.
-                return;
-            }
-
-            $logFile = $logDir . '/' . date('Y-m-d_H-i-s') . '_' . uniqid() . '.json';
-            
-            // To prevent potential JSON encoding errors with invalid UTF-8 strings
-            array_walk_recursive($logData, function (&$item, $key) {
-                if (is_string($item)) {
-                    $item = mb_convert_encoding($item, 'UTF-8', 'UTF-8');
-                }
-            });
-
-            $jsonLogData = json_encode($logData, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-
-            if (file_put_contents($logFile, $jsonLogData) === false) {
-                error_log("Failed to write to Gemini log file: " . $logFile);
-            }
-
-        } catch (Exception $e) {
-            error_log("Error in log_gemini_interaction: " . $e->getMessage());
-        }
     }
 }
 
@@ -424,16 +425,18 @@ class TextEditor {
  */
 class GitService {
     private $repoRoot;
+    private $logger;
 
     /**
      * GitService constructor.
      * Finds the git repository root and verifies git is installed.
+     * @param LogService $logger An instance of the LogService.
      * @throws Exception if not in a git repository or git command is not found.
      */
-    public function __construct() {
+    public function __construct(LogService $logger) {
+        $this->logger = $logger;
         $this->repoRoot = $this->find_git_root(DOC_ROOT);
         if ($this->repoRoot === null) {
-            // Check if git command exists to give a more specific error
             exec('command -v git', $output, $return_var);
             if ($return_var !== 0) {
                 throw new Exception("The 'git' command is not available on this server.");
@@ -468,10 +471,16 @@ class GitService {
      */
     private function execute($command) {
         // All commands should be run from the repo root. Redirect stderr to stdout to capture errors.
-        $full_command = 'cd ' . escapeshellarg($this->repoRoot) . ' && ' . $command . ' 2>&1';
+        $full_command = 'git -C ' . escapeshellarg($this->repoRoot) . ' ' . $command . ' 2>&1';
         exec($full_command, $output, $return_var);
+        $this->logger->log('exec', [
+            'command' => $full_command,
+            'stdout' => implode("\n", $output),
+            'stderr' => '', // Stderr is redirected to stdout
+            'return_code' => $return_var
+        ]);
         if ($return_var !== 0) {
-            throw new Exception("Git command failed with code $return_var: $command\nOutput: " . implode("\n", $output));
+            throw new Exception("Git command failed with code $return_var: git -C ... $command\nOutput: " . implode("\n", $output));
         }
         return $output;
     }
@@ -484,17 +493,17 @@ class GitService {
     public function commitChanges(array $files, $prompt) {
         foreach ($files as $filePath) {
             $absolutePath = realpath(DOC_ROOT . '/' . $filePath);
-            if (!$absolutePath) continue; // Skip if file doesn't exist (e.g., it was just created)
-            $this->execute('git add ' . escapeshellarg($absolutePath));
+            if (!$absolutePath) continue;
+            $this->execute('add ' . escapeshellarg($absolutePath));
         }
 
-        $status_output = $this->execute('git status --porcelain');
+        $status_output = $this->execute('status --porcelain');
         if (empty($status_output)) {
             return; // Nothing to commit
         }
 
         $commit_message = "[WebRobot] " . $prompt;
-        $this->execute('git commit -m ' . escapeshellarg($commit_message));
+        $this->execute('commit -m ' . escapeshellarg($commit_message));
     }
 
     /**
@@ -511,7 +520,7 @@ class GitService {
 
         $separator = '|||';
         $format = '%H' . $separator . '%ai' . $separator . '%s';
-        $command = 'git log --pretty=format:"' . $format . '" -- ' . escapeshellarg($relativePath);
+        $command = 'log --pretty=format:"' . $format . '" -- ' . escapeshellarg($relativePath);
 
         try {
             $log_output = $this->execute($command);
@@ -522,7 +531,7 @@ class GitService {
         }
 
         $history = [];
-        $current_hash_output = $this->execute('git rev-parse HEAD');
+        $current_hash_output = $this->execute('rev-parse HEAD');
         $current_hash = trim($current_hash_output[0]);
 
         foreach ($log_output as $line) {
@@ -541,6 +550,7 @@ class GitService {
      * Rolls back a file to a specific commit.
      * @param string $commitHash The commit hash to revert to.
      * @param string $filePath The file path to revert.
+     * @throws Exception
      */
     public function rollback($commitHash, $filePath) {
         $absolutePath = realpath(DOC_ROOT . '/' . $filePath);
@@ -548,7 +558,7 @@ class GitService {
             throw new Exception("File to rollback does not exist: $filePath");
         }
         $relativePath = str_replace($this->repoRoot . '/', '', $absolutePath);
-        $this->execute('git checkout ' . escapeshellarg($commitHash) . ' -- ' . escapeshellarg($relativePath));
+        $this->execute('checkout ' . escapeshellarg($commitHash) . ' -- ' . escapeshellarg($relativePath));
     }
 }
 
@@ -562,6 +572,8 @@ class WebRobotUpdater {
     private $geminiService;
     /** @var GitService|null The service for Git version control. */
     private $gitService;
+    /** @var LogService The service for logging. */
+    private $logger;
 
     /**
      * WebRobotUpdater constructor.
@@ -569,19 +581,26 @@ class WebRobotUpdater {
      * to allow the service to use its helper methods.
      */
     public function __construct() {
-        $this->geminiService = new GeminiService($this);
+        $this->logger = new LogService();
+        $this->geminiService = new GeminiService($this->logger);
         try {
-            $this->gitService = new GitService();
+            $this->gitService = new GitService($this->logger);
         } catch (Exception $e) {
             // If Git isn't set up, we can't use versioning. Log the error.
             error_log("GitService initialization failed: " . $e->getMessage());
             $this->gitService = null;
+            $this->logger->setError("GitService initialization failed: " . $e->getMessage());
         }
     }
 
     /** @return GitService|null */
     public function getGitService() {
         return $this->gitService;
+    }
+    
+    /** @return LogService */
+    public function getLogger() {
+        return $this->logger;
     }
 
     /**
@@ -896,6 +915,9 @@ try {
     // Catch any exceptions thrown during the process and return a generic server error.
     http_response_code(500);
     $response['error'] = $e->getMessage();
+    if ($updater) {
+        $updater->getLogger()->setError($e->getMessage());
+    }
 }
 
 echo json_encode($response);
