@@ -64,6 +64,10 @@
                             <i class="fa-solid fa-crosshairs"></i>
                             <span>Scope</span>
                         </button>
+                        <button id="ai-editor-uploads" title="Manage Uploads" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                            <i class="fa-solid fa-upload"></i>
+                            <span>Uploads</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -121,6 +125,47 @@
                 </div>
                 <div class="p-2 bg-stone-900/50 border-t border-stone-700 text-right">
                     <button id="ai-editor-scope-done" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-1.5 rounded-md text-xs">Done</button>
+                </div>
+            </div>
+        </div>
+        <div id="ai-editor-uploads-modal" class="fixed inset-0 bg-black/60 z-[101] hidden items-center justify-center p-4">
+            <div class="bg-stone-800 rounded-lg shadow-2xl w-full max-w-4xl flex flex-col" style="height: 80vh;">
+                <div class="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
+                    <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-upload"></i>File Uploads</h3>
+                    <button id="ai-editor-uploads-close" class="text-stone-400 hover:text-white text-2xl leading-none">&times;</button>
+                </div>
+                <div class="flex-grow flex overflow-hidden">
+                    <!-- Upload Form -->
+                    <div class="w-1/3 p-4 border-r border-stone-700 flex flex-col">
+                        <h4 class="text-sm font-bold text-stone-300 mb-3">Upload New File</h4>
+                        <div id="upload-dropzone" class="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-stone-600 rounded-lg p-4 text-center text-stone-400 transition-colors hover:border-brandGreen-500 hover:bg-stone-700/50">
+                            <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
+                            <p class="text-sm">Drag & drop files here or</p>
+                            <button id="upload-browse-btn" class="mt-2 text-brandGreen-400 hover:underline font-semibold">browse to upload</button>
+                            <input type="file" id="upload-file-input" class="hidden" multiple>
+                        </div>
+                        <div id="upload-preview-container" class="mt-3 space-y-2"></div>
+                        <textarea id="upload-description" rows="2" class="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-brandGreen-500 mt-3" placeholder="File description..."></textarea>
+                        <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                             <label class="flex items-center gap-2 p-2 rounded-md bg-stone-900/50"><input type="radio" name="upload-type" value="image" class="form-radio text-brandGreen-600" checked> Image</label>
+                             <label class="flex items-center gap-2 p-2 rounded-md bg-stone-900/50"><input type="radio" name="upload-type" value="document" class="form-radio text-brandGreen-600"> Document</label>
+                        </div>
+                        <button id="upload-submit-btn" class="mt-3 w-full bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-2 rounded-md text-sm flex items-center justify-center gap-2">
+                            <span id="upload-btn-text">Upload</span>
+                            <i id="upload-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
+                        </button>
+                    </div>
+                    <!-- File Lists -->
+                    <div class="w-2/3 p-4 overflow-y-auto custom-scrollbar">
+                        <div>
+                            <h4 class="text-sm font-bold text-stone-300 mb-2">Images</h4>
+                            <div id="uploads-image-list" class="space-y-2"></div>
+                        </div>
+                        <div class="mt-6">
+                            <h4 class="text-sm font-bold text-stone-300 mb-2">Documents</h4>
+                            <div id="uploads-document-list" class="space-y-2"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -536,6 +581,164 @@
         }
     }
 
+    // --- Uploads Modal Functions ---
+
+    function hideUploadsModal() {
+        const modal = document.getElementById('ai-editor-uploads-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+    }
+
+    async function showUploadsModal() {
+        const modal = document.getElementById('ai-editor-uploads-modal');
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        await refreshUploadsList();
+    }
+
+    async function refreshUploadsList() {
+        const imageList = document.getElementById('uploads-image-list');
+        const docList = document.getElementById('uploads-document-list');
+        if (!imageList || !docList) return;
+
+        imageList.innerHTML = '<div class="p-2 text-stone-400"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+        docList.innerHTML = '<div class="p-2 text-stone-400"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
+
+        try {
+            const response = await fetch('/webrobot.php?action=list_uploads', { method: 'POST' });
+            if (!response.ok) throw new Error('Failed to fetch uploads.');
+            const { uploads } = await response.json();
+
+            const renderList = (items, type) => {
+                if (!items || items.length === 0) {
+                    return '<div class="p-2 text-stone-500 text-xs">No files uploaded.</div>';
+                }
+                return items.map(item => `
+                    <div class="bg-stone-900/75 p-2 rounded-md flex items-center justify-between text-xs">
+                        <div>
+                            <div class="font-semibold text-stone-200">${item.filename}</div>
+                            <div class="text-stone-400">${item.description}</div>
+                        </div>
+                        <button class="delete-upload-btn text-red-500 hover:text-red-400 px-2 py-1" data-filename="${item.filename}" data-type="${type}">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                `).join('');
+            };
+
+            imageList.innerHTML = renderList(uploads.images, 'image');
+            docList.innerHTML = renderList(uploads.documents, 'document');
+
+        } catch (error) {
+            imageList.innerHTML = `<div class="p-2 text-red-400">${error.message}</div>`;
+            docList.innerHTML = `<div class="p-2 text-red-400">${error.message}</div>`;
+        }
+    }
+
+    function handleFileSelect(files) {
+        const previewContainer = document.getElementById('upload-preview-container');
+        if (!files || files.length === 0 || !previewContainer) return;
+
+        // For now, only handle the first file if multiple are selected/dropped
+        const file = files[0];
+        previewContainer.innerHTML = `
+            <div class="p-2 bg-stone-700 rounded-md text-xs text-white flex items-center gap-2">
+                <i class="fa-solid fa-file"></i>
+                <span class="font-semibold">${file.name}</span>
+                <span class="text-stone-400">(${(file.size / 1024).toFixed(1)} KB)</span>
+            </div>
+        `;
+        // Store the file object for submission
+        previewContainer.file = file;
+    }
+
+    async function handleUploadSubmit() {
+        const previewContainer = document.getElementById('upload-preview-container');
+        const file = previewContainer.file;
+        const description = document.getElementById('upload-description').value.trim();
+        const type = document.querySelector('input[name="upload-type"]:checked').value;
+        const submitBtn = document.getElementById('upload-submit-btn');
+        const btnText = document.getElementById('upload-btn-text');
+        const spinner = document.getElementById('upload-spinner');
+
+        if (!file) {
+            showToast('Upload Error', 'Please select a file to upload.', false);
+            return;
+        }
+        if (!description) {
+            showToast('Upload Error', 'Please enter a description.', false);
+            return;
+        }
+
+        submitBtn.disabled = true;
+        btnText.textContent = 'Uploading...';
+        spinner.classList.remove('hidden');
+
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('description', description);
+        formData.append('type', type);
+
+        try {
+            const response = await fetch('/webrobot.php?action=handle_upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Upload failed.');
+
+            showToast('Upload Success', result.message, true);
+            
+            // Reset form
+            previewContainer.innerHTML = '';
+            previewContainer.file = null;
+            document.getElementById('upload-description').value = '';
+
+            await refreshUploadsList();
+
+        } catch (error) {
+            showToast('Upload Error', error.message, false);
+        } finally {
+            submitBtn.disabled = false;
+            btnText.textContent = 'Upload';
+            spinner.classList.add('hidden');
+        }
+    }
+
+    async function handleDeleteUpload(e) {
+        const deleteBtn = e.target.closest('.delete-upload-btn');
+        if (!deleteBtn) return;
+
+        const { filename, type } = deleteBtn.dataset;
+        if (!filename || !type) return;
+
+        if (!confirm(`Are you sure you want to delete "${filename}"? This cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch('/webrobot.php?action=delete_upload', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ filename, type })
+            });
+
+            const result = await response.json();
+            if (!response.ok) throw new Error(result.error || 'Delete failed.');
+
+            showToast('Success', result.message, true);
+            await refreshUploadsList();
+
+        } catch (error) {
+            showToast('Delete Error', error.message, false);
+        }
+    }
+
     function initializeEditor() {
         document.body.insertAdjacentHTML('beforeend', editorHTML);
 
@@ -586,6 +789,37 @@
                     checkbox.checked = isChecked;
                 });
             });
+        }
+
+        // Uploads Modal Listeners
+        document.getElementById('ai-editor-uploads')?.addEventListener('click', showUploadsModal);
+        document.getElementById('ai-editor-uploads-close')?.addEventListener('click', hideUploadsModal);
+        document.getElementById('upload-submit-btn')?.addEventListener('click', handleUploadSubmit);
+        document.getElementById('uploads-image-list')?.addEventListener('click', handleDeleteUpload);
+        document.getElementById('uploads-document-list')?.addEventListener('click', handleDeleteUpload);
+
+        // Drag and Drop & Browse Listeners
+        const dropzone = document.getElementById('upload-dropzone');
+        const fileInput = document.getElementById('upload-file-input');
+        const browseBtn = document.getElementById('upload-browse-btn');
+
+        if (dropzone && fileInput && browseBtn) {
+            browseBtn.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.add('border-brandGreen-500', 'bg-stone-700/50'), false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropzone.addEventListener(eventName, () => dropzone.classList.remove('border-brandGreen-500', 'bg-stone-700/50'), false);
+            });
+            dropzone.addEventListener('drop', (e) => handleFileSelect(e.dataTransfer.files), false);
         }
     }
 

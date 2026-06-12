@@ -684,6 +684,14 @@ class WebRobotUpdater {
         return $this->gitService;
     }
 
+    private function getUploadsMetadataPath() {
+        return DOC_ROOT . '/upload/uploads.json';
+    }
+
+    private function getUploadsDir() {
+        return DOC_ROOT . '/upload';
+    }
+
     /**
      * Orchestrates the process of generating and saving file updates using the AI.
      * It can process a specific list of files or all HTML files found in the sitemap.
@@ -754,6 +762,15 @@ class WebRobotUpdater {
             }
         }
 
+        // Automatically include uploads.json if it exists, to give the AI context on available files.
+        $uploadsMetadataPath = $this->getUploadsMetadataPath();
+        if (file_exists($uploadsMetadataPath)) {
+            $files_for_api[] = [
+                'path' => 'upload/uploads.json',
+                'content' => file_get_contents($uploadsMetadataPath)
+            ];
+        }
+
         if (empty($files_for_api)) {
             throw new Exception('No valid files found to process.');
         }
@@ -776,6 +793,102 @@ class WebRobotUpdater {
             'usage' => $geminiResult['usage'],
             'interaction_id' => $geminiResult['interaction_id'],
         ];
+    }
+
+    /**
+     * Lists all uploaded files by reading the metadata JSON.
+     * @return array A list of uploaded file metadata.
+     */
+    public function listUploads() {
+        $metadataPath = $this->getUploadsMetadataPath();
+        if (!file_exists($metadataPath)) {
+            return ['images' => [], 'documents' => []];
+        }
+
+        $metadata = json_decode(file_get_contents($metadataPath), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception('Error reading uploads metadata file.');
+        }
+
+        return $metadata;
+    }
+
+    /**
+     * Handles a file upload, saves it, and updates the metadata JSON.
+     * @param array $file The uploaded file from $_FILES.
+     * @param string $description The description of the file.
+     * @param string $type The type of file ('image' or 'document').
+     * @throws Exception If the upload fails or metadata cannot be saved.
+     */
+    public function handleUpload($file, $description, $type) {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            throw new Exception('File upload error: ' . $file['error']);
+        }
+
+        $uploadDir = $this->getUploadsDir();
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Sanitize filename
+        $filename = preg_replace('/[^a-zA-Z0-9-_\.]/', '', basename($file['name']));
+        $targetPath = $uploadDir . '/' . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
+            throw new Exception('Failed to move uploaded file.');
+        }
+
+        // Update metadata
+        $metadataPath = $this->getUploadsMetadataPath();
+        $metadata = $this->listUploads();
+
+        $newEntry = [
+            'filename' => $filename,
+            'description' => $description,
+            'path' => 'upload/' . $filename,
+            'timestamp' => date('c')
+        ];
+
+        if ($type === 'image') {
+            $metadata['images'][] = $newEntry;
+        } else {
+            $metadata['documents'][] = $newEntry;
+        }
+
+        if (file_put_contents($metadataPath, json_encode($metadata, JSON_PRETTY_PRINT)) === false) {
+            // Attempt to clean up the uploaded file if metadata fails
+            unlink($targetPath);
+            throw new Exception('Failed to write to uploads metadata file.');
+        }
+    }
+
+    /**
+     * Deletes an uploaded file and removes it from the metadata JSON.
+     * @param string $filename The name of the file to delete.
+     * @param string $type The type of file ('image' or 'document').
+     * @throws Exception If the file cannot be deleted or metadata fails to save.
+     */
+    public function deleteUpload($filename, $type) {
+        $uploadDir = $this->getUploadsDir();
+        $targetPath = $uploadDir . '/' . $filename;
+
+        // Security check: ensure the file is within the upload directory
+        if (strpos(realpath($targetPath), realpath($uploadDir)) !== 0) {
+            throw new Exception('Invalid file path for deletion.');
+        }
+
+        if (file_exists($targetPath) && !unlink($targetPath)) {
+            throw new Exception('Failed to delete file.');
+        }
+
+        // Update metadata
+        $metadataPath = $this->getUploadsMetadataPath();
+        $metadata = $this->listUploads();
+        $key = ($type === 'image') ? 'images' : 'documents';
+
+        $metadata[$key] = array_values(array_filter($metadata[$key], fn($item) => $item['filename'] !== $filename));
+
+        file_put_contents($metadataPath, json_encode($metadata, JSON_PRETTY_PRINT));
     }
 
     /**
@@ -1036,6 +1149,24 @@ try {
             $response['message'] = $result['message'];
             $response['interaction_id'] = $result['interaction_id'];
             $response['usage'] = $result['usage'];
+            break;
+        case 'list_uploads':
+            $response['uploads'] = $updater->listUploads();
+            break;
+        case 'handle_upload':
+            if (!isset($_FILES['file']) || !isset($_POST['description']) || !isset($_POST['type'])) {
+                throw new Exception('Missing upload parameters.');
+            }
+            $updater->handleUpload($_FILES['file'], $_POST['description'], $_POST['type']);
+            $response['message'] = 'File uploaded successfully.';
+            break;
+        case 'delete_upload':
+            $data = json_decode(file_get_contents('php://input'), true);
+            if (!isset($data['filename']) || !isset($data['type'])) {
+                throw new Exception('Missing delete parameters.');
+            }
+            $updater->deleteUpload($data['filename'], $data['type']);
+            $response['message'] = 'File deleted successfully.';
             break;
         case 'save_text_edit':
             $data = json_decode(file_get_contents('php://input'), true);
