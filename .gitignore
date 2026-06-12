@@ -5,3 +5,5 @@ etc/certificates
 var
 bin
 archive
+.git_webfiles
+pages/.gitignore_webfiles
