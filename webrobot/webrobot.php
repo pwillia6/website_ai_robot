@@ -6,7 +6,6 @@ define('DOC_ROOT', __DIR__ . '/../pages');
 
 
 /*-- "Curl example command" to process files with interactions API, Its output is a set of files in diff format
-
 #!/bin/bash
 
 # 1. Verify environment and arguments
@@ -94,8 +93,55 @@ JSON_PAYLOAD=$(jq -n \
 # 4. Send to the Interactions API and parse the response
 curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/interactions?key=$GEMINI_KEY" \
 -H "Content-Type: application/json" \
--d "$JSON_PAYLOAD" | jq -r '.steps[-1].content[0].text' > content.json
+-d "$JSON_PAYLOAD" > response1.json
 
+INTERACTION_ID=$(jq -r '.id' response1.json)
+
+if [ -z "$INTERACTION_ID" ] || [ "$INTERACTION_ID" == "null" ]; then
+    echo "Error: Failed to get interaction ID from the first response."
+    cat response1.json
+    exit 1
+fi
+
+echo "First interaction complete. ID: $INTERACTION_ID"
+jq -r '.steps[-1].content[0].text' response1.json > content.json
+echo "Response content saved to content.json"
+
+# 5. Prompt for the second turn
+echo -e "\nEnter your follow-up task/prompt (Press Enter when done):"
+read -r USER_PROMPT_2
+
+if [ -z "$USER_PROMPT_2" ]; then
+    echo "No follow-up prompt provided. Exiting."
+    exit 0
+fi
+
+echo "Generating payload for the second call..."
+
+# 6. Construct the payload for the second call
+JSON_PAYLOAD_2=$(jq -n \
+  --arg prev_id "$INTERACTION_ID" \
+  --arg prompt "$USER_PROMPT_2" \
+  '{
+    "model": "gemini-3.1-pro-preview",
+    "previous_interaction_id": $prev_id,
+    "system_instruction": "You are an expert web developer. You will receive file contents and a task. Return the modifications as standard Unified Diffs for any changed files. Do not return the full file content.",
+    "input": [
+      {
+        "type": "text",
+        "text": ("--- TASK ---\n" + $prompt)
+      }
+    ],
+    "response_format": (.response_format | fromjson)
+  }' --argjson response_format "$(jq '.response_format' <<< "$JSON_PAYLOAD")")
+
+# 7. Send the second request to the Interactions API
+echo "Calling the Interactions API for the second time..."
+curl -s -X POST "https://generativelanguage.googleapis.com/v1beta/interactions?key=$GEMINI_KEY" \
+-H "Content-Type: application/json" \
+-d "$JSON_PAYLOAD_2" | jq -r '.steps[-1].content[0].text' > content2.json
+
+echo "Second response content saved to content2.json"
 */
 
 /* "Sample Execution" of the command
@@ -250,13 +296,12 @@ class GeminiService {
                 ]
             ];
 
-            $logData['request']['fullPayload'] = $data;
-
             if ($interactionId) {
-                $url = "https://generativelanguage.googleapis.com/v1beta/{$interactionId}:continue?key={$this->apiKey}";
-            } else {
-                $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$this->apiKey}";
+                $data['previous_interaction_id'] = $interactionId;
             }
+
+            $logData['request']['fullPayload'] = $data; // Log the payload after adding previous_interaction_id
+            $url = "https://generativelanguage.googleapis.com/v1beta/interactions?key={$this->apiKey}";
 
             // Execute the API call using cURL.
             $ch = curl_init($url);
@@ -288,7 +333,7 @@ class GeminiService {
             }
 
             $result = json_decode($apiResponse, true);
-            $newInteractionId = $result['name'] ?? null;
+            $newInteractionId = $result['id'] ?? null;
 
             $modified_files_json = null;
             if (isset($result['steps']) && is_array($result['steps'])) {

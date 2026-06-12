@@ -341,13 +341,9 @@
                 filesToUpdate.push(getCurrentFilePath());
             }
 
-            const isMultiFile = updateAllHtml || filesToUpdate.length > 1;
-            let interactionId = null;
             const cookieName = getInteractionCookieName();
-
-            if (!isMultiFile) {
-                interactionId = getCookie(cookieName);
-            }
+            // Always retrieve the interactionId to maintain conversational context.
+            let interactionId = getCookie(cookieName);
 
             const payload = {
                 prompt: userPrompt,
@@ -366,14 +362,12 @@
             
             const result = await response.json();
             
-            // Only manage cookies for single-file, conversational edits.
-            if (!isMultiFile) {
-                if (result.interaction_id) {
-                    setSessionCookie(cookieName, result.interaction_id, 1); // Set for 1 day
-                } else {
-                    // If no ID came back, the conversation is broken or over. Clear the cookie.
-                    setSessionCookie(cookieName, '', -1);
-                }
+            // Always manage the cookie to maintain conversational context.
+            if (result.interaction_id) {
+                setSessionCookie(cookieName, result.interaction_id, 1); // Set for 1 day
+            } else {
+                // If no ID came back, the conversation is broken or over. Clear the cookie.
+                setSessionCookie(cookieName, '', -1);
             }
 
             showToast('AI Editor', result.message || 'Update successful! Reloading...', true);
