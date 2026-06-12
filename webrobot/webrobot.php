@@ -535,12 +535,20 @@ class GitService {
         $log_output = $this->execute($command);
 
         $history = [];
+        $webRobotPrefix = '[WebRobot]';
+
         foreach ($log_output as $line) {
             list($hash, $date, $subject) = explode($separator, $line, 3);
-            // The frontend expects 'file' for the hash and 'prompt' for the subject.
-            $history[] = ['file' => $hash, 'date' => $date, 'prompt' => $subject];
+
+            // Only show commits made by WebRobot, and stop when we hit a manual commit.
+            if (strpos(trim($subject), $webRobotPrefix) === 0) {
+                // The frontend expects 'file' for the hash and 'prompt' for the subject.
+                $history[] = ['file' => $hash, 'date' => $date, 'prompt' => $subject];
+            } else {
+                // Stop processing when a non-WebRobot commit is found.
+                break;
+            }
         }
-        // Note: is_current is tricky for repo-wide history and not strictly needed by the frontend logic.
         return $history;
     }
 
