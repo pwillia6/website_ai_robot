@@ -909,16 +909,42 @@
         const hasCookie = getCookie('ai_editor_enabled') === 'true';
 
         if (hasRobotHash) {
-            // Set the session cookie if the hash is present
             setSessionCookie('ai_editor_enabled', 'true');
+        } else if (!hasCookie) {
+            return;
         }
 
-        if (hasRobotHash || hasCookie) {
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeEditor);
-            } else {
-                initializeEditor();
+        // If we reach here, show the toggle button.
+        // The actual editor initialization and login check will happen when the user clicks it.
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', showToggleButton);
+        } else {
+            showToggleButton();
+        }
+    }
+
+    function showToggleButton() {
+        const toggleButtonHTML = `
+            <button id="ai-editor-toggle" class="fixed top-2 right-2 bg-brandGreen-700 text-white w-10 h-10 rounded-full shadow-lg z-[99] flex items-center justify-center hover:bg-brandGreen-600 transition-all">
+                <i class="fa-solid fa-robot"></i>
+            </button>`;
+        document.body.insertAdjacentHTML('beforeend', toggleButtonHTML);
+        document.getElementById('ai-editor-toggle')?.addEventListener('click', handleToggleClick);
+    }
+
+    async function handleToggleClick() {
+        // Check login status now, when the user wants to open the editor.
+        try {
+            const response = await fetch('/webrobot.php?action=check_login_status', { method: 'POST' });
+            if (!response.ok) {
+                console.warn('AI Editor: Not logged in or login cancelled. Editor will not load.');
+                return; // Stop if login fails or is cancelled.
             }
+            // Login was successful, now initialize the full editor UI.
+            initializeEditor();
+            toggleEditorBar(); // Open the editor bar immediately after initialization.
+        } catch (error) {
+            console.error('AI Editor: Failed to check login status. Editor will not load.', error);
         }
     }
 

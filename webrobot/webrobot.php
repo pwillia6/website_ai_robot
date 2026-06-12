@@ -1208,6 +1208,9 @@ try {
             $response['interaction_id'] = $result['interaction_id'];
             $response['usage'] = $result['usage'];
             break;
+        case 'check_login_status':
+            $response['message'] = 'User is logged in.';
+            break;
         case 'list_uploads':
             $response['uploads'] = $updater->listUploads();
             break;
