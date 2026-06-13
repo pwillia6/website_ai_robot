@@ -88,9 +88,6 @@
             <button id="ai-editor-close" class="text-stone-500 hover:text-white pt-2" title="Close Editor">
                 <i class="fa-solid fa-times"></i>
             </button>
-        </div>
-        <button id="ai-editor-toggle" class="fixed top-2 right-2 bg-brandGreen-700 text-white w-10 h-10 rounded-full shadow-lg z-[99] flex items-center justify-center hover:bg-brandGreen-600 transition-all">
-            <i class="fa-solid fa-robot"></i>
         </button>
         <div id="ai-editor-history-modal" class="fixed inset-0 bg-black/60 z-[101] hidden items-center justify-center p-4">
             <div class="bg-stone-800 rounded-lg shadow-2xl w-full max-w-lg">
@@ -168,6 +165,8 @@
     `;
 
     // --- Functions ---
+
+    let isEditorInitialized = false;
 
     /**
      * Resets dynamically generated content on the page.
@@ -817,12 +816,12 @@
         }
     }
 
-    function initializeEditor() {
+    async function initializeEditor() {
         document.body.insertAdjacentHTML('beforeend', editorHTML);
 
-        document.getElementById('ai-editor-toggle')?.addEventListener('click', toggleEditorBar);
         document.getElementById('ai-editor-close')?.addEventListener('click', toggleEditorBar);
         document.getElementById('ai-editor-generate')?.addEventListener('click', handleGenerate);
+
         document.getElementById('ai-editor-prompt')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault(); // Prevent new line in textarea
@@ -901,6 +900,8 @@
             });
             dropzone.addEventListener('drop', (e) => handleFileSelect(e.dataTransfer.files), false);
         }
+
+        isEditorInitialized = true;
     }
 
     // --- Initialization Logic ---
@@ -933,18 +934,24 @@
     }
 
     async function handleToggleClick() {
-        // Check login status now, when the user wants to open the editor.
-        try {
-            const response = await fetch('/webrobot.php?action=check_login_status', { method: 'POST' });
-            if (!response.ok) {
-                console.warn('AI Editor: Not logged in or login cancelled. Editor will not load.');
-                return; // Stop if login fails or is cancelled.
+        if (isEditorInitialized) {
+            toggleEditorBar();
+        } else {
+            // Check login status now, when the user wants to open the editor for the first time.
+            try {
+                const response = await fetch('/webrobot.php?action=check_login_status', { method: 'POST' });
+                if (!response.ok) {
+                    // This can happen if the user cancels the login prompt.
+                    console.warn('AI Editor: Not logged in or login cancelled. Editor will not load.');
+                    return; 
+                }
+                // Login was successful, now initialize the full editor UI.
+                await initializeEditor();
+                toggleEditorBar(); // Open the editor bar immediately after initialization.
+            } catch (error) {
+                console.error('AI Editor: Failed to check login status. Editor will not load.', error);
+                showToast('Editor Error', 'Could not verify login status.', false);
             }
-            // Login was successful, now initialize the full editor UI.
-            initializeEditor();
-            toggleEditorBar(); // Open the editor bar immediately after initialization.
-        } catch (error) {
-            console.error('AI Editor: Failed to check login status. Editor will not load.', error);
         }
     }
 

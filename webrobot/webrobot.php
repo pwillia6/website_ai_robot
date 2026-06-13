@@ -537,18 +537,20 @@ class GitService {
         $history = [];
         $webRobotPrefix = '[WebRobot]';
 
+        // Iterate from newest to oldest to find the relevant commits
         foreach ($log_output as $line) {
             list($hash, $date, $subject) = explode($separator, $line, 3);
 
-            // Only show commits made by WebRobot, and stop when we hit a manual commit.
             if (strpos(trim($subject), $webRobotPrefix) === 0) {
-                // The frontend expects 'file' for the hash and 'prompt' for the subject.
                 $history[] = ['file' => $hash, 'date' => $date, 'prompt' => $subject];
             } else {
-                // Stop processing when a non-WebRobot commit is found.
+                // This is the first non-WebRobot commit, so it's our initial state.
+                $history[] = ['file' => $hash, 'date' => $date, 'prompt' => 'Initial commit'];
+                // Stop processing further commits.
                 break;
             }
         }
+
         return $history;
     }
 
@@ -759,6 +761,30 @@ class WebRobotUpdater {
                 }
             } catch (Exception $e) {
                 error_log("Could not include data source file '$dataSourcePath' for AI processing: " . $e->getMessage());
+            }
+        }
+
+        // --- New Logic: Scan for and add Server-Side Includes ---
+        $ssi_paths = [];
+        // Scan the content of already added files for SSI directives.
+        foreach ($files_for_api as $file) {
+            if (preg_match_all('/<!--#include\s+virtual="([^"]+)"\s*-->/', $file['content'], $matches)) {
+                foreach ($matches[1] as $match) {
+                    $ssi_paths[] = $match;
+                }
+            }
+        }
+
+        // Add unique SSI files to the context for the AI.
+        $unique_ssi_paths = array_unique($ssi_paths);
+        foreach ($unique_ssi_paths as $ssiPath) {
+            try {
+                $fullSsiPath = $this->validate_path($ssiPath);
+                if (is_file($fullSsiPath)) {
+                    $files_for_api[] = ['path' => $ssiPath, 'content' => file_get_contents($fullSsiPath)];
+                }
+            } catch (Exception $e) {
+                error_log("Could not include SSI file '$ssiPath' for AI processing: " . $e->getMessage());
             }
         }
 
