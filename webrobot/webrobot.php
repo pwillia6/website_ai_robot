@@ -423,12 +423,20 @@ class GitService {
         // Iterate from newest to oldest to find the relevant commits
         foreach ($log_output as $line) {
             list($hash, $date, $subject) = explode($separator, $line, 3);
+            $trimmed_subject = trim($subject);
 
-            if (strpos(trim($subject), $webRobotPrefix) === 0) {
-                $history[] = ['file' => $hash, 'date' => $date, 'prompt' => $subject];
+            // Check if the subject contains '[WebRobot]' anywhere, to include standard commits and revert commits.
+            if (strpos($trimmed_subject, $webRobotPrefix) !== false) {
+                $is_revert = (strpos($trimmed_subject, 'Revert "') === 0);
+                $history[] = [
+                    'file' => $hash,
+                    'date' => $date,
+                    'prompt' => $subject,
+                    'is_revert' => $is_revert
+                ];
             } else {
                 // This is the first non-WebRobot commit, so it's our initial state.
-                $history[] = ['file' => $hash, 'date' => $date, 'prompt' => 'Initial commit'];
+                $history[] = ['file' => $hash, 'date' => $date, 'prompt' => 'Initial commit', 'is_revert' => false];
                 // Stop processing further commits.
                 break;
             }
@@ -533,7 +541,25 @@ class GitService {
      * @param string $commitHash The commit hash to revert to.
      */
     public function rollbackRepository($commitHash) {
-        $this->execute('git reset --hard ' . escapeshellarg($commitHash));
+        // Get the list of commits to revert. This will be all commits from HEAD
+        // back to the one *after* the target commit hash.
+        $logCommand = 'git log --pretty=%H ' . escapeshellarg($commitHash) . '..HEAD';
+        $commitsToRevert = $this->execute($logCommand);
+
+        if (empty($commitsToRevert)) {
+            // This might happen if the user tries to activate the current version,
+            // or if the commit is not an ancestor of HEAD.
+            // Silently do nothing, as there are no changes to revert.
+            return;
+        }
+
+        // Revert the commits. `git log` gives them newest first, which is the correct order.
+        // `git revert` can handle multiple commit hashes at once.
+        // The --no-edit flag prevents the command from opening an editor for the commit message.
+        // This creates new commits that undo the changes, preserving history and allowing
+        // the user to "roll forward" by reverting the reverts.
+        $revertCommand = 'git revert --no-edit ' . implode(' ', $commitsToRevert);
+        $this->execute($revertCommand);
     }
 
     /**

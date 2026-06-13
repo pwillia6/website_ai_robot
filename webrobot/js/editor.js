@@ -452,6 +452,7 @@
             if (data.commits && data.commits.length > 0) {
                 listContainer.innerHTML = data.commits.map((backup, index) => {
                     const isCurrent = index === 0;
+                    const isRevert = backup.is_revert;
 
                     const promptHtml = backup.prompt ? `
                         <div class="mt-2 p-2 bg-stone-900/50 border border-stone-700 rounded">
@@ -465,13 +466,15 @@
                         ? `<a href="#" class="diff-link text-brandTeal-400 hover:underline ml-2" data-commit="${backup.file}">changes</a>`
                         : '';
 
+                    const revertIndicatorHtml = isRevert 
+                        ? `<span class="ml-2 text-xs font-semibold bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-400/30"><i class="fa-solid fa-undo mr-1"></i>Revert</span>` 
+                        : '';
+
                     let rollbackButtonHtml;
                     if (isCurrent) {
                         rollbackButtonHtml = `<span class="bg-brandGreen-700 text-white font-semibold px-3 py-1 rounded-md text-[10px] uppercase tracking-wider">Current</span>`;
-                    } else if (index === 1) {
-                        rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Activate</button>`;
                     } else {
-                        rollbackButtonHtml = `<button disabled class="rollback-btn bg-stone-700 text-stone-500 font-semibold px-3 py-1 rounded-md cursor-not-allowed">Activate</button>`;
+                        rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Revert</button>`;
                     }
 
                     const currentVersionClasses = isCurrent ? 'bg-stone-700/75 border border-brandGreen-700' : 'border border-transparent hover:bg-stone-700/50';
@@ -483,6 +486,7 @@
                                 <span class="font-mono text-stone-300">${backup.file.substring(0, 7)}</span>
                                 ${diffLinkHtml}
                                 <span class="text-stone-400 ml-2">${backup.date}</span>
+                                ${revertIndicatorHtml}
                             </div>
                             ${rollbackButtonHtml}
                         </div>
@@ -746,7 +750,7 @@
         const commitHash = targetButton.dataset.commit;
         if (!commitHash) return;
         
-        if (!confirm(`Are you sure you want to roll back the entire site to this version?\n\nAll changes made after this version will be permanently lost.`)) {
+        if (!confirm(`Are you sure you want to revert to this version?\n\nThis will create new commits to undo any changes made after this version. Your full history will be preserved.`)) {
             return;
         }
 
@@ -763,14 +767,14 @@
             if (!response.ok) throw new Error((await response.json()).error || 'Rollback failed.');
 
             await response.json();
-            showToast('AI Editor', 'Version activated! Reloading...', true);
+            showToast('AI Editor', 'Version reverted! Reloading...', true);
             setTimeout(() => window.location.reload(), 1500);
 
         } catch (error) {
             console.error('Rollback Error:', error);
-            showToast('Activation Error', error.message, false);
+            showToast('Revert Error', error.message, false);
             targetButton.disabled = false;
-            targetButton.textContent = 'Activate';
+            targetButton.textContent = 'Revert';
         }
     }
 
