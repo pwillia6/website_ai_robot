@@ -460,6 +460,11 @@
                         </div>
                     ` : '';
 
+                    const isWebRobotCommit = backup.prompt && backup.prompt.includes('[WebRobot]');
+                    const diffLinkHtml = isWebRobotCommit 
+                        ? `<a href="#" class="diff-link text-brandTeal-400 hover:underline ml-2" data-commit="${backup.file}">changes</a>`
+                        : '';
+
                     let rollbackButtonHtml;
                     if (isCurrent) {
                         rollbackButtonHtml = `<span class="bg-brandGreen-700 text-white font-semibold px-3 py-1 rounded-md text-[10px] uppercase tracking-wider">Current</span>`;
@@ -476,7 +481,7 @@
                         <div class="flex justify-between items-center text-xs">
                             <div>
                                 <span class="font-mono text-stone-300">${backup.file.substring(0, 7)}</span>
-                                <a href="#" class="diff-link text-brandTeal-400 hover:underline ml-2" data-commit="${backup.file}">changes</a>
+                                ${diffLinkHtml}
                                 <span class="text-stone-400 ml-2">${backup.date}</span>
                             </div>
                             ${rollbackButtonHtml}
@@ -690,22 +695,30 @@
                             plusHtml += escapedValue.innerHTML;
                         }
                     });
-                    formattedHtml += `<span class="text-red-400">- ${minusHtml}</span>\n`;
-                    formattedHtml += `<span class="text-green-400">+ ${plusHtml}</span>\n`;
+                    if (cleanMinus.trim().length > 0) {
+                        formattedHtml += `<span class="text-red-400">- ${minusHtml}</span>\n`;
+                    }
+                    if (cleanPlus.trim().length > 0) {
+                        formattedHtml += `<span class="text-green-400">+ ${plusHtml}</span>\n`;
+                    }
                     i += 2; // Skip next line as it has been processed
                 } else if (line.startsWith('+') && !line.startsWith('+++')) {
                     let cleanText = stripTags(line.substring(1));
                     if (!isJsonFile) {
                         cleanText = cleanText.replace(/\t/g, ' ').replace(/ +/g, ' ');
                     }
-                    formattedHtml += `<span class="text-green-400">+ ${cleanText}</span>\n`;
+                    if (cleanText.trim().length > 0) {
+                        formattedHtml += `<span class="text-green-400">+ ${cleanText}</span>\n`;
+                    }
                     i++;
                 } else if (line.startsWith('-') && !line.startsWith('---')) {
                     let cleanText = stripTags(line.substring(1));
                     if (!isJsonFile) {
                         cleanText = cleanText.replace(/\t/g, ' ').replace(/ +/g, ' ');
                     }
-                    formattedHtml += `<span class="text-red-400">- ${cleanText}</span>\n`;
+                    if (cleanText.trim().length > 0) {
+                        formattedHtml += `<span class="text-red-400">- ${cleanText}</span>\n`;
+                    }
                     i++;
                 } else {
                     // Ignore all other lines (---, +++, @@, index, context, etc.)
