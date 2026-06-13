@@ -450,8 +450,8 @@
 
             const data = await response.json();
             if (data.commits && data.commits.length > 0) {
-                listContainer.innerHTML = data.commits.map(backup => {
-                    const isCurrent = backup.is_current;
+                listContainer.innerHTML = data.commits.map((backup, index) => {
+                    const isCurrent = index === 0;
 
                     const promptHtml = backup.prompt ? `
                         <div class="mt-2 p-2 bg-stone-900/50 border border-stone-700 rounded">
@@ -460,9 +460,14 @@
                         </div>
                     ` : '';
 
-                    const rollbackButtonHtml = isCurrent
-                        ? `<span class="bg-brandGreen-700 text-white font-semibold px-3 py-1 rounded-md text-[10px] uppercase tracking-wider">Current</span>`
-                        : `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Activate</button>`;
+                    let rollbackButtonHtml;
+                    if (isCurrent) {
+                        rollbackButtonHtml = `<span class="bg-brandGreen-700 text-white font-semibold px-3 py-1 rounded-md text-[10px] uppercase tracking-wider">Current</span>`;
+                    } else if (index === 1) {
+                        rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Activate</button>`;
+                    } else {
+                        rollbackButtonHtml = `<button disabled class="rollback-btn bg-stone-700 text-stone-500 font-semibold px-3 py-1 rounded-md cursor-not-allowed">Activate</button>`;
+                    }
 
                     const currentVersionClasses = isCurrent ? 'bg-stone-700/75 border border-brandGreen-700' : 'border border-transparent hover:bg-stone-700/50';
 
@@ -470,7 +475,7 @@
                     <div class="p-2 rounded-md transition-colors ${currentVersionClasses}">
                         <div class="flex justify-between items-center text-xs">
                             <div>
-                                <span class="font-mono text-stone-300">.${backup.file.split('.').pop()}</span>
+                                <span class="font-mono text-stone-300">${backup.file.substring(0, 7)}</span>
                                 <span class="text-stone-400 ml-2">${backup.date}</span>
                             </div>
                             ${rollbackButtonHtml}
