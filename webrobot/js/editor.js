@@ -151,8 +151,8 @@
             /* Modals */
             .ai-editor-modal { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); z-index: 100002; display: flex; align-items: center; justify-content: center; padding: 1rem; }
             .ai-editor-modal-content { background-color: var(--c-bg-base); color: var(--c-text-base); border-radius: 0.5rem; box-shadow: var(--c-shadow); width: 100%; display: flex; flex-direction: column; }
-            #ai-editor-history-modal .ai-editor-modal-content { max-width: 56rem; }
-            #ai-editor-scope-modal .ai-editor-modal-content { max-width: 42rem; }
+            #ai-editor-history-modal .ai-editor-modal-content { max-width: 56rem; max-height: 80vh; }
+            #ai-editor-scope-modal .ai-editor-modal-content { max-width: 42rem; max-height: 80vh; }
             #ai-editor-uploads-modal .ai-editor-modal-content { max-width: 80rem; height: 80vh; }
             .ai-editor-modal-header { padding: 1rem; border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
             .ai-editor-modal-header h3 { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; }
