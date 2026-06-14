@@ -187,9 +187,10 @@
             .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--c-text-subtle); }
 
             /* History List */
-            #ai-editor-history-list > div { padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease; border: 1px solid transparent; }
-            #ai-editor-history-list > div:hover { background-color: var(--c-bg-surface); }
-            #ai-editor-history-list > div > div:first-child { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+            .history-item { padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease; border: 1px solid transparent; }
+            .history-item:hover { background-color: var(--c-bg-surface); }
+            .history-item.current { border-color: var(--c-accent-green); }
+            .history-item-header { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
             #ai-editor-history-list .commit-hash { font-family: monospace; }
             #ai-editor-history-list .diff-link { color: var(--c-accent-gold); text-decoration: none; margin-left: 0.5rem; }
             #ai-editor-history-list .diff-link:hover { text-decoration: underline; }
@@ -201,8 +202,8 @@
             #ai-editor-history-list .prompt-container { margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.2); border: 1px solid var(--c-border); border-radius: 0.25rem; }
             #ai-editor-history-list .prompt-label { color: var(--c-text-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
             #ai-editor-history-list .prompt-text { color: var(--c-text-muted); font-size: 12px; white-space: pre-wrap; }
-            #ai-editor-history-list .diff-container { display: none; margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.3); border-radius: 0.375rem; max-height: 15rem; overflow-y: auto; }
-            #ai-editor-history-list .diff-container pre { font-size: 12px; white-space: pre-wrap; font-family: monospace; }
+            #ai-editor-history-list .diff-container { margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.3); border-radius: 0.375rem; max-height: 15rem; overflow-y: auto; }
+            #ai-editor-history-list .diff-container pre { font-size: 12px; white-space: pre-wrap; font-family: monospace; color: var(--c-text-base); }
             #ai-editor-history-list .diff-container .diff-add-word { background-color: rgba(34, 197, 94, 0.3); }
             #ai-editor-history-list .diff-container .diff-del-word { background-color: rgba(239, 68, 68, 0.3); }
 
@@ -783,7 +784,7 @@
 
                     const isWebRobotCommit = backup.prompt && backup.prompt.includes('[WebRobot]');
                     const diffLinkHtml = isWebRobotCommit 
-                        ? `<a href="#" class="diff-link text-brandTeal-400 hover:underline ml-2" data-commit="${backup.file}">changes</a>`
+                        ? `<a href="#" class="diff-link" data-commit="${backup.file}">changes</a>`
                         : '';
 
                     const revertIndicatorHtml = isRevert 
@@ -794,7 +795,7 @@
                     if (isCurrent) {
                         rollbackButtonHtml = `<span class="current-tag">Current</span>`;
                     } else {
-                        rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Revert</button>`;
+                        rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn">Revert</button>`;
                     }
 
                     return `
@@ -809,8 +810,8 @@
                             ${rollbackButtonHtml}
                         </div>
                         ${promptHtml}
-                        <div class="diff-container">
-                            <pre class="text-xs text-white whitespace-pre-wrap font-mono"></pre>
+                        <div class="diff-container ai-editor-hidden">
+                            <pre></pre>
                         </div>
                     </div>`;
                 }).join('');
