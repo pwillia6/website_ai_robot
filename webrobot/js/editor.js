@@ -30,7 +30,7 @@
             
             <!-- Editor Mode Toggle -->
             <div class="flex-shrink-0 text-center pt-1.5 space-y-1">
-                <div class="font-bold text-brandTeal-400 flex items-center gap-2">
+                <div class="font-bold text-rotary-azure flex items-center gap-2">
                     <i class="fa-solid fa-robot"></i>
                     <span>Editor</span>
                 </div>
@@ -38,7 +38,7 @@
                     <span id="ai-mode-label" class="font-semibold text-xs text-white">AI</span>
                     <label for="mode-toggle" class="relative inline-flex items-center cursor-pointer">
                         <input type="checkbox" value="" id="mode-toggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-stone-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-brandGreen-600"></div>
+                        <div class="w-9 h-5 bg-stone-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rotary-blue"></div>
                     </label>
                     <span id="text-mode-label" class="font-semibold text-xs text-stone-400">Text</span>
                 </div>
@@ -46,9 +46,9 @@
 
             <!-- AI Controls -->
             <div id="ai-editor-controls" class="flex-grow flex items-start gap-3">
-                <textarea id="ai-editor-prompt" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-brandGreen-500 resize-y" placeholder="Enter your edit request... (Cmd/Ctrl + Enter to submit)"></textarea>
+                <textarea id="ai-editor-prompt" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold resize-y" placeholder="Enter your edit request... (Cmd/Ctrl + Enter to submit)"></textarea>
                 <div class="flex flex-col gap-2 flex-shrink-0">
-                    <button id="ai-editor-generate" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
+                    <button id="ai-editor-generate" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
                         <span id="ai-editor-btn-text">Generate</span>
                         <i id="ai-editor-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
                     </button>
@@ -75,9 +75,9 @@
 
             <!-- Text Editor Controls -->
             <div id="text-editor-controls" class="hidden flex-grow items-start gap-3">
-                <textarea id="text-editor-comment" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-brandGreen-500 resize-y" placeholder="Add a comment about your changes (optional)..."></textarea>
+                <textarea id="text-editor-comment" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold resize-y" placeholder="Add a comment about your changes (optional)..."></textarea>
                 <div class="flex flex-col gap-2 flex-shrink-0">
-                    <button id="save-text-btn" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
+                    <button id="save-text-btn" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
                         <i class="fa-solid fa-save mr-1"></i> Save Changes
                     </button>
                     <button id="cancel-text-btn" class="bg-stone-700 hover:bg-stone-600 text-stone-300 font-semibold px-4 py-2.5 rounded-md text-sm w-full">
@@ -112,7 +112,7 @@
                         <h4 class="text-sm font-bold text-stone-300 mb-2">Target Pages (HTML)</h4>
                         <div class="space-y-2 text-xs">
                             <label class="flex items-center space-x-2 p-2 bg-stone-900/50 rounded-md">
-                                <input type="checkbox" id="ai-update-all-html" class="form-checkbox h-4 w-4 text-brandGreen-600 bg-stone-700 border-stone-600 rounded focus:ring-brandGreen-500">
+                                <input type="checkbox" id="ai-update-all-html" class="form-checkbox h-4 w-4 text-rotary-blue bg-stone-700 border-stone-600 rounded focus:ring-rotary-gold">
                                 <span class="text-stone-200 font-semibold">Update All HTML Pages</span>
                             </label>
                             <div id="ai-editor-target-files" class="space-y-2 pl-2 border-l border-stone-700 ml-2">
@@ -122,7 +122,7 @@
                     </div>
                 </div>
                 <div class="p-2 bg-stone-900/50 border-t border-stone-700 text-right">
-                    <button id="ai-editor-scope-done" class="bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-1.5 rounded-md text-xs">Done</button>
+                    <button id="ai-editor-scope-done" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-1.5 rounded-md text-xs">Done</button>
                 </div>
             </div>
         </div>
@@ -136,15 +136,15 @@
                     <!-- Upload Form -->
                     <div class="w-1/3 p-4 border-r border-stone-700 flex flex-col">
                         <h4 class="text-sm font-bold text-stone-300 mb-3">Upload New File</h4>
-                        <div id="upload-dropzone" class="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-stone-600 rounded-lg p-4 text-center text-stone-400 transition-colors hover:border-brandGreen-500 hover:bg-stone-700/50">
+                        <div id="upload-dropzone" class="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-stone-600 rounded-lg p-4 text-center text-stone-400 transition-colors hover:border-rotary-gold hover:bg-stone-700/50">
                             <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
                             <p class="text-sm">Drag & drop files here or</p>
-                            <button id="upload-browse-btn" class="mt-2 text-brandGreen-400 hover:underline font-semibold">browse to upload</button>
+                            <button id="upload-browse-btn" class="mt-2 text-rotary-gold hover:underline font-semibold">browse to upload</button>
                             <input type="file" id="upload-file-input" class="hidden" multiple>
                         </div>
                         <div id="upload-preview-container" class="mt-3 space-y-2"></div>
-                        <textarea id="upload-description" rows="2" class="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-brandGreen-500 mt-3" placeholder="File description..."></textarea>
-                        <button id="upload-submit-btn" class="mt-3 w-full bg-brandGreen-700 hover:bg-brandGreen-600 text-white font-semibold px-4 py-2 rounded-md text-sm flex items-center justify-center gap-2">
+                        <textarea id="upload-description" rows="2" class="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold mt-3" placeholder="File description..."></textarea>
+                        <button id="upload-submit-btn" class="mt-3 w-full bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2 rounded-md text-sm flex items-center justify-center gap-2">
                             <span id="upload-btn-text">Upload</span>
                             <i id="upload-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
                         </button>
@@ -185,9 +185,16 @@
      * Toggles the editor between AI and Text modes.
      */
     function setEditorMode() {
+        let elementsToEdit = [];
         const mainEl = document.querySelector('main');
-        if (!mainEl) {
-            console.error('Could not find <main> tag in the page to edit.');
+        if (mainEl) {
+            elementsToEdit.push(mainEl);
+        } else {
+            elementsToEdit = Array.from(document.querySelectorAll('section'));
+        }
+
+        if (elementsToEdit.length === 0) {
+            console.error('Could not find <main> or <section> tags in the page to edit.');
             return;
         }
 
@@ -198,7 +205,7 @@
         const textEditorControls = document.getElementById('text-editor-controls');
 
         const isTextMode = modeToggle.checked;
-        const wasInTextMode = mainEl.contentEditable === 'true';
+        const wasInTextMode = elementsToEdit.some(el => el.contentEditable === 'true');
 
         if (isTextMode) {
             // --- Enable Text Editor Mode ---
@@ -213,10 +220,12 @@
             // Reset dynamically generated content before making the main tag editable.
             resetGeneratedContent();
 
-            mainEl.contentEditable = 'true';
-            mainEl.style.outline = '2px dashed #8ac43f'; // brandGreen-400
-            mainEl.style.minHeight = '300px';
-            mainEl.focus();
+            elementsToEdit.forEach(el => {
+                el.contentEditable = 'true';
+                el.style.outline = '2px dashed #F7A81B'; // rotary-gold
+                el.style.minHeight = '150px';
+            });
+            elementsToEdit[0].focus();
         } else {
             // --- Disable Text Editor Mode (Return to AI/View) ---
             if (wasInTextMode) {
@@ -237,8 +246,10 @@
             textModeLabel.classList.remove('text-white');
             textModeLabel.classList.add('text-stone-400');
 
-            mainEl.contentEditable = 'false';
-            mainEl.style.outline = 'none';
+            elementsToEdit.forEach(el => {
+                el.contentEditable = 'false';
+                el.style.outline = 'none';
+            });
         }
     }
 
@@ -246,16 +257,38 @@
      * Saves the edited innerHTML of the <main> tag.
      */
     async function saveTextChanges() {
-        const mainEl = document.querySelector('main');
         const currentFile = getCurrentFilePath();
         const commentInput = document.getElementById('text-editor-comment');
+        
+        const editableElements = Array.from(document.querySelectorAll('[contenteditable="true"]'));
+        let newContent = '';
 
-        if (!mainEl || !currentFile) {
-            showToast('Text Editor Error', 'No file selected or <main> content not found.', false);
+        if (editableElements.length > 0) {
+            // If a <main> tag is being edited, get its inner HTML. This implicitly excludes the contenteditable attribute.
+            if (editableElements[0].tagName.toLowerCase() === 'main') {
+                newContent = editableElements[0].innerHTML;
+            } else {
+                // Otherwise, we are editing <section> tags. The backend needs the HTML of all sections.
+                const allSections = document.querySelectorAll('section');
+                newContent = Array.from(allSections).map(el => {
+                    // For sections that were being edited, clone them to get their outerHTML 
+                    // without the temporary 'contenteditable' 
+                    if (el.contentEditable === 'true') {
+                        const clone = el.cloneNode(true);
+                        clone.removeAttribute('contenteditable');
+                        clone.removeAttribute('style');
+                        return clone.outerHTML;
+                    }
+                    return el.outerHTML;
+                }).join('\n');
+            }
+        }
+
+        if (!newContent || !currentFile) {
+            showToast('Text Editor Error', 'No editable content found or file path is missing.', false);
             return;
         }
 
-        const newMainContent = mainEl.innerHTML;
         const comment = commentInput ? commentInput.value.trim() : '';
         
         if (!confirm('Are you sure you want to save these changes? This will overwrite the main content of the page.')) {
@@ -263,23 +296,27 @@
         }
 
         try {
-            const response = await fetch('/webrobot.php?action=save_text_edit', {
+            const result = await webrobotFetch('/webrobot.php?action=save_text_edit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     file: currentFile,
-                    content: newMainContent,
+                    content: newContent,
                     comment: comment,
                 }),
             });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'An unknown error occurred on the server.');
-            }
-
             showToast('Text Editor', result.message, true);
+
+            // Visually disable editing immediately after successful save.
+            editableElements.forEach(el => {
+                el.contentEditable = 'false';
+                el.style.outline = 'none';
+            });
+            // Also disable the save/cancel buttons to prevent re-submission
+            document.getElementById('save-text-btn').disabled = true;
+            document.getElementById('cancel-text-btn').disabled = true;
+
             // Reload the page to show the saved state
             setTimeout(() => window.location.reload(), 1500);
 
@@ -296,6 +333,40 @@
         if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
             window.location.reload(); // Reload to discard changes
         }
+    }
+
+    /**
+     * A wrapper for the fetch API to handle standard WebRobot responses,
+     * including session-expired redirects.
+     * @param {string} url The URL to fetch.
+     * @param {object} options The options for the fetch call.
+     * @returns {Promise<any>} A promise that resolves with the JSON result.
+     * @throws {Error} If the request fails or the server returns an error.
+     */
+    async function webrobotFetch(url, options) {
+        const response = await fetch(url, options);
+        
+        let result;
+        try {
+            result = await response.json();
+        } catch (e) {
+            const rawText = await response.text();
+            throw new Error(`Request failed with status ${response.status}. Server response: ${rawText}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(result.error || `Request failed with status ${response.status}`);
+        }
+
+        if (result.status === 'redirect' && result.redirect_url) {
+            showToast('Session Expired', 'You are being redirected to the login page.', false);
+            // Return a promise that never resolves to stop further execution in the caller.
+            return new Promise(() => {
+                setTimeout(() => { window.location.href = result.redirect_url; }, 1500);
+            });
+        }
+
+        return result;
     }
 
     /**
@@ -393,16 +464,12 @@
                 interaction_id: interactionId
             };
 
-            const response = await fetch('/webrobot.php?action=generate_and_save', {
+            const result = await webrobotFetch('/webrobot.php?action=generate_and_save', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            if (!response.ok) throw new Error((await response.json()).error || 'Generate failed.');
-            
-            const result = await response.json();
-            
             // Always manage the cookie to maintain conversational context.
             if (result.interaction_id) {
                 setSessionCookie(cookieName, result.interaction_id, 1); // Set for 1 day
@@ -438,17 +505,10 @@
         listContainer.innerHTML = '<div class="p-4 text-center text-stone-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading history...</div>';
 
         try {
-            const response = await fetch('/webrobot.php?action=list_commits', {
+            const data = await webrobotFetch('/webrobot.php?action=list_commits', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-            }
-
-            const data = await response.json();
             if (data.commits && data.commits.length > 0) {
                 listContainer.innerHTML = data.commits.map((backup, index) => {
                     const isCurrent = index === 0;
@@ -538,7 +598,7 @@
                     const isCurrentPage = page.path === currentFile;
                     return `
                     <label class="flex items-center space-x-2 p-2 bg-stone-900/50 rounded-md hover:bg-stone-700/50 cursor-pointer ${isCurrentPage ? 'opacity-50' : ''}">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-brandGreen-600 bg-stone-700 border-stone-600 rounded focus:ring-brandGreen-500 ai-target-file" value="${page.path}" ${isCurrentPage ? 'checked disabled' : ''}>
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-rotary-blue bg-stone-700 border-stone-600 rounded focus:ring-rotary-gold ai-target-file" value="${page.path}" ${isCurrentPage ? 'checked disabled' : ''}>
                         <span class="text-stone-300">${page.title} <span class="text-stone-500 font-mono text-[10px]">(${page.path})</span></span>
                     </label>
                 `}).join('');
@@ -758,15 +818,11 @@
         targetButton.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
 
         try {
-            const response = await fetch('/webrobot.php?action=rollback', {
+            await webrobotFetch('/webrobot.php?action=rollback', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ commit: commitHash })
             });
-
-            if (!response.ok) throw new Error((await response.json()).error || 'Rollback failed.');
-
-            await response.json();
             showToast('AI Editor', 'Version reverted! Reloading...', true);
             setTimeout(() => window.location.reload(), 1500);
 
@@ -806,9 +862,7 @@
         docList.innerHTML = '<div class="p-2 text-stone-400"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</div>';
 
         try {
-            const response = await fetch('/webrobot.php?action=list_uploads', { method: 'POST' });
-            if (!response.ok) throw new Error('Failed to fetch uploads.');
-            const { uploads } = await response.json();
+            const { uploads } = await webrobotFetch('/webrobot.php?action=list_uploads', { method: 'POST' });
 
             const renderList = (items, type) => {
                  if (!items || items.length === 0) {
@@ -829,9 +883,9 @@
                                  <div class="font-semibold text-stone-200">${item.filename}</div>
                                  <div class="description-view text-stone-400">${item.description}</div>
                                  <div class="description-edit hidden">
-                                     <input type="text" value="${item.description}" class="w-full bg-stone-800 border border-stone-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-brandGreen-500">
+                                 <input type="text" value="${item.description}" class="w-full bg-stone-800 border border-stone-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-rotary-gold">
                                      <div class="mt-1.5 space-x-2">
-                                         <button class="save-desc-btn text-brandGreen-400 hover:underline">Save</button>
+                                     <button class="save-desc-btn text-rotary-gold hover:underline">Save</button>
                                          <button class="cancel-desc-btn text-stone-400 hover:underline">Cancel</button>
                                      </div>
                                  </div>
@@ -896,13 +950,10 @@
         formData.append('description', description);
 
         try {
-            const response = await fetch('/webrobot.php?action=handle_upload', {
+            const result = await webrobotFetch('/webrobot.php?action=handle_upload', {
                 method: 'POST',
                 body: formData
             });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Upload failed.');
 
             showToast('Upload Success', result.message, true);
             
@@ -934,14 +985,11 @@
         }
 
         try {
-            const response = await fetch('/webrobot.php?action=delete_upload', {
+            const result = await webrobotFetch('/webrobot.php?action=delete_upload', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ filename, type })
             });
-
-            const result = await response.json();
-            if (!response.ok) throw new Error(result.error || 'Delete failed.');
 
             showToast('Success', result.message, true);
             await refreshUploadsList();
@@ -994,14 +1042,11 @@
             saveBtn.disabled = true;
 
             try {
-                const response = await fetch('/webrobot.php?action=update_upload_description', {
+                const result = await webrobotFetch('/webrobot.php?action=update_upload_description', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ filename, type, description: newDescription })
                 });
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'Failed to save.');
 
                 showToast('Success', result.message, true);
                 viewMode.textContent = newDescription; // Update view
@@ -1129,7 +1174,7 @@
 
     function showToggleButton() {
         const toggleButtonHTML = `
-            <button id="ai-editor-toggle" class="fixed top-2 right-2 bg-brandGreen-700 text-white w-10 h-10 rounded-full shadow-lg z-[99] flex items-center justify-center hover:bg-brandGreen-600 transition-all">
+            <button id="ai-editor-toggle" class="fixed top-2 right-2 bg-rotary-blue text-white w-10 h-10 rounded-full shadow-lg z-[99] flex items-center justify-center hover:bg-rotary-royal transition-all transform hover:scale-110">
                 <i class="fa-solid fa-robot"></i>
             </button>`;
         document.body.insertAdjacentHTML('beforeend', toggleButtonHTML);
@@ -1142,18 +1187,33 @@
         } else {
             // Check login status now, when the user wants to open the editor for the first time.
             try {
-                const response = await fetch('/webrobot.php?action=check_login_status', { method: 'POST' });
+                const response = await fetch('/webrobot.php?action=check_login_status', {
+                    method: 'POST'
+                });
+                const result = await response.json();
+
                 if (!response.ok) {
-                    // This can happen if the user cancels the login prompt.
-                    console.warn('AI Editor: Not logged in or login cancelled. Editor will not load.');
-                    return; 
+                    // This can happen if the server returns 500, etc.
+                    throw new Error(result.error || 'Login check failed.');
                 }
-                // Login was successful, now initialize the full editor UI.
-                await initializeEditor();
-                toggleEditorBar(); // Open the editor bar immediately after initialization.
+
+                if (result.status === 'redirect' && result.redirect_url) {
+                    // The backend says we need to log in. Redirect to the provided URL.
+                    window.location.href = result.redirect_url;
+                    return; // Stop execution
+                }
+
+                if (result.status === 'success') {
+                    // Login was successful, now initialize the full editor UI.
+                    await initializeEditor();
+                    toggleEditorBar(); // Open the editor bar immediately after initialization.
+                } else {
+                    // Unexpected response from backend
+                    throw new Error(result.error || 'Unknown login status.');
+                }
             } catch (error) {
                 console.error('AI Editor: Failed to check login status. Editor will not load.', error);
-                showToast('Editor Error', 'Could not verify login status.', false);
+                showToast('Editor Error', 'Could not verify login status: ' + error.message, false);
             }
         }
     }

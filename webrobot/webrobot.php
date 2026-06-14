@@ -7,6 +7,9 @@ define('DOC_ROOT', __DIR__ . '/../pages');
 // When true, apply_diff will always throw an exception.
 define('SIMULATE_PATCH_FAILURE', false);
 
+// New require for login checker
+require_once __DIR__ . '/WebRobotLoginChecker.php';
+
 /**
  * Handles all interactions with the Google Gemini API.
  * This includes loading configuration, constructing prompts, making API calls, and logging.
@@ -347,10 +350,22 @@ class TextEditor {
         $newFullContent = preg_replace('/(<main[^>]*>)(.*?)(<\/main>)/s', '$1' . $safeCleanedMainContent . '$3', $originalContent, 1, $count);
 
         if ($count === 0) {
-            throw new Exception("Could not find <main> tag in the file to update.");
+            // Fallback for pages without a <main> tag. Replace all <section>s.
+            $firstSectionPos = strpos($originalContent, '<section');
+            $lastSectionEndPos = strrpos($originalContent, '</section>');
+
+            if ($firstSectionPos !== false && $lastSectionEndPos !== false) {
+                $lastSectionEndPos += strlen('</section>');
+                $prefix = substr($originalContent, 0, $firstSectionPos);
+                $suffix = substr($originalContent, $lastSectionEndPos);
+                // Here we use $cleanedMainContent because we are not using preg_replace's replacement string.
+                $newFullContent = $prefix . $cleanedMainContent . $suffix;
+            } else {
+                throw new Exception("Could not find <main> tag or <section> tags in the file to update.");
+            }
         }
 
-        if (file_put_contents($fullPath, $newFullContent) === false) {
+        if ($newFullContent === null || file_put_contents($fullPath, $newFullContent) === false) {
             throw new Exception('Failed to save main file via Text Editor.');
         }
         $filesToCommit[] = $filePath;
@@ -1154,6 +1169,23 @@ header('Content-Type: application/json');
 
 $action = isset($_GET['action']) ? $_GET['action'] : '';
 $response = array();
+
+// --- New Login Guard ---
+// The 'check_login_status' action is the only one that can be called without being logged in.
+// All other actions require an active, authorized session.
+if ($action !== 'check_login_status') {
+    $loginChecker = new \WebRobot\WebRobotLoginChecker();
+    $loginStatus = $loginChecker->isLoggedIn();
+
+    if ($loginStatus !== true) {
+        // User is not logged in. Send a redirect response and stop execution.
+        // The frontend (editor.js) will handle the redirection.
+        $response['status'] = 'redirect';
+        $response['redirect_url'] = $loginStatus;
+        echo json_encode($response);
+        exit;
+    }
+}
 $updater = new WebRobotUpdater();
 
 // Main action handler.
@@ -1172,7 +1204,17 @@ try {
             $response['usage'] = $result['usage'];
             break;
         case 'check_login_status':
-            $response['message'] = 'User is logged in.';
+            $loginChecker = new \WebRobot\WebRobotLoginChecker();
+            $loginStatus = $loginChecker->isLoggedIn();
+
+            if ($loginStatus === true) {
+                $response['status'] = 'success';
+                $response['message'] = 'User is logged in.';
+            } else {
+                // It's a redirect URL
+                $response['status'] = 'redirect';
+                $response['redirect_url'] = $loginStatus;
+            }
             break;
         case 'list_uploads':
             $response['uploads'] = $updater->listUploads();
