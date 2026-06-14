@@ -11,7 +11,7 @@ echo "This script will create configuration files from .template files."
 echo
 
 # --- Dependency Check ---
-for cmd in find grep sort uniq sed curl jq; do
+for cmd in find grep sort uniq sed curl jq git; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: Required command '$cmd' is not installed. Please install it and try again." >&2
         exit 1
@@ -174,15 +174,73 @@ if [[ -n "${VAR_VALUES[GEMINI_API_KEY]:-}" ]]; then
     done
 fi
 
+# --- Create Log Directory ---
+if [[ -n "${VAR_VALUES[LOG_PATH]:-}" ]]; then
+    LOG_DIR_TO_CREATE="${VAR_VALUES[LOG_PATH]}"
+    echo "Ensuring WebRobot log directory exists at '${LOG_DIR_TO_CREATE}'..."
+    # The -p flag ensures that the command doesn't fail if the directory already exists.
+    if ! mkdir -p "${LOG_DIR_TO_CREATE}"; then
+        echo "Error: Failed to create log directory at '${LOG_DIR_TO_CREATE}'." >&2
+        echo "Please check permissions and the path's validity, then run the script again." >&2
+        exit 1
+    fi
+    echo "Log directory is ready."
+    echo
+fi
+
+# --- Git Repository Initialization ---
+# The WebRobot uses Git for versioning backups and rollbacks.
+# This will initialize a new repository in the 'pages' directory if one is not already present
+# in the 'pages' directory or any of its parent directories.
+PAGES_DIR="./pages"
+if [ -d "$PAGES_DIR" ]; then
+    # Check if the 'pages' directory is inside a git repository.
+    # `git rev-parse` is the canonical way to check. It will have a non-zero exit code if not in a repo.
+    if git -C "$PAGES_DIR" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+        REPO_ROOT=$(git -C "$PAGES_DIR" rev-parse --show-toplevel)
+        echo "Found existing Git repository at: ${REPO_ROOT}"
+        echo
+    else
+        echo "No existing Git repository found that includes the '${PAGES_DIR}' directory."
+        echo "Initializing a new Git repository in '${PAGES_DIR}'..."
+        if ! git init "$PAGES_DIR"; then
+            echo "Error: Failed to initialize Git repository in '${PAGES_DIR}'." >&2
+            echo "Please check permissions. Versioning features in the WebRobot will be disabled." >&2
+        else
+            echo "Git repository initialized successfully in '${PAGES_DIR}'."
+            # It's good practice to make an initial commit of existing files.
+            # This prevents the first WebRobot commit from including all pre-existing content.
+            if [ -n "$(ls -A ${PAGES_DIR})" ]; then
+                echo "Creating initial commit with existing files..."
+                git -C "$PAGES_DIR" add .
+                git -C "$PAGES_DIR" commit --allow-empty -m "Initial commit of existing website files"
+                echo "Initial commit created."
+            fi
+        fi
+        echo
+    fi
+else
+    echo "Warning: '${PAGES_DIR}' directory not found. Skipping Git repository check."
+    echo
+fi
+
 # --- File Generation ---
 for TPL_FILE in $TEMPLATE_FILES; do
     # Determine the output filename by removing the .template extension.
     OUTPUT_FILE=${TPL_FILE%.template}
 
+    # As requested, output the main website config as .example as it's likely to be manually edited.
+    if [[ "$OUTPUT_FILE" == *"/website.conf" ]]; then
+        OUTPUT_FILE="${OUTPUT_FILE}.example"
+    fi
+
     if [ -f "$OUTPUT_FILE" ]; then
-        read -p "Warning: '${OUTPUT_FILE}' already exists. Overwrite? (y/N) " -n 1 -r
+        read -p "Warning: '${OUTPUT_FILE}' already exists. Overwrite and create a .bak file? (y/N) " -n 1 -r
         echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "  - Backing up existing file to ${OUTPUT_FILE}.bak"
+            cp "$OUTPUT_FILE" "${OUTPUT_FILE}.bak"
+        else
             echo "Skipping ${OUTPUT_FILE}."
             continue
         fi
