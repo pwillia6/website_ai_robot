@@ -31,34 +31,35 @@ class GeminiService {
     public function __construct(WebRobotUpdater $updater) {
         $this->updater = $updater;
 
-        // Set default configuration values.
-        $this->apiKey = 'YOUR_GEMINI_API_KEY'; // Fallback API Key
-        $this->model = 'gemini-3.1-pro-preview'; // Fallback model, updated for diff support
         $projectRoot = dirname(DOC_ROOT); // e.g., /path/to/acms.cweb.com.au
-        $repoRoot = dirname($projectRoot);    // e.g., /path/to/acms2
-        $this->logPath = $repoRoot . '/var/log/gemini'; // Default log path
+        $key_file = $projectRoot . '/etc/webrobot_config.json'; // Path to the configuration file
 
-        $key_file = $projectRoot . '/etc/gemini.json'; // Path to the configuration file
-
-        // Override defaults with values from the configuration file if it exists.
-        if (file_exists($key_file)) {
-            $json_content = file_get_contents($key_file);
-            $key_data = json_decode($json_content, true);
-            if (!empty($key_data['key'])) {
-                $this->apiKey = $key_data['key'];
-            }
-            if (!empty($key_data['model'])) {
-                $this->model = $key_data['model'];
-            }
-            if (isset($key_data['log_path'])) {
-                if (empty($key_data['log_path'])) {
-                    $this->logPath = ''; // Disable logging by setting path to empty
-                } else {
-                    // The path in the config is the absolute path.
-                    $this->logPath = $key_data['log_path'];
-                }
-            }
+        if (!file_exists($key_file)) {
+            throw new Exception("Configuration file not found: {$key_file}");
         }
+
+        $json_content = file_get_contents($key_file);
+        $key_data = json_decode($json_content, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw new Exception("Error decoding configuration file: " . json_last_error_msg());
+        }
+
+        if (empty($key_data['key'])) {
+            throw new Exception("API 'key' is missing or empty in webrobot_config.json.");
+        }
+        $this->apiKey = $key_data['key'];
+
+        if (empty($key_data['model'])) {
+            throw new Exception("'model' is missing or empty in webrobot_config.json.");
+        }
+        $this->model = $key_data['model'];
+
+        if (!isset($key_data['log_path'])) {
+            throw new Exception("'log_path' is missing in webrobot_config.json. Set to an empty string to disable logging.");
+        }
+        // The path in the config is the absolute path. An empty string disables logging.
+        $this->logPath = $key_data['log_path'];
     }
 
     /**
@@ -74,10 +75,7 @@ class GeminiService {
      * @throws Exception If the API key is not configured or if the API call fails.
      */
     public function call_gemini_api(array $files, $userPrompt, $interactionId = null, $output_format = 'diff') {
-        if ($this->apiKey === 'YOUR_GEMINI_API_KEY') {
-            throw new Exception('Gemini API key is not configured.');
-        }
-
+        // The constructor now validates that the API key is set.
         // Prepare data structure for logging the entire interaction.
         $logData = [
             'timestamp' => date('Y-m-d H:i:s'),

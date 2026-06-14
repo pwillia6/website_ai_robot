@@ -6,9 +6,9 @@
 #
 
 # Define variables for the domain and base directory to make this configuration portable.
-Define DOMAIN acms.cweb.com.au
-Define BASE_DIR /home/www/${DOMAIN}
-Define HTPASSWD_PATH /home/ec2-user/etc/htpasswd
+Define DOMAIN %DOMAIN%
+Define BASE_DIR %BASE_PATH%/${DOMAIN}
+Define HTPASSWD_PATH %HTPASSWD_PATH%
  
 <VirtualHost *:80>
    Include ${BASE_DIR}/etc/www.conf

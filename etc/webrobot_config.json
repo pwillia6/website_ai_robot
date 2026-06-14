@@ -1,0 +1,5 @@
+{
+    "key" : "<redacted>",
+    "model": "gemini-2.5-flash",
+    "log_path" : "/home/ec2-user/acms.cweb.com.au/var/log/webrobot"
+}

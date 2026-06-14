@@ -1,0 +1,5 @@
+{
+    "key" : "%GEMINI_API_KEY%",
+    "model": "%GEMINI_MODEL%",
+    "log_path" : "%LOG_PATH%"
+}
