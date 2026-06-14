@@ -9,3 +9,6 @@ archive
 pages
 etc/webrobot_config.json
 etc/website.conf
+etc/htpasswd
+etc/webrobot_config.json.bak
+etc/website.conf.example
