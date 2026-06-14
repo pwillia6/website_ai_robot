@@ -259,15 +259,28 @@
     async function saveTextChanges() {
         const currentFile = getCurrentFilePath();
         const commentInput = document.getElementById('text-editor-comment');
+        
+        const editableElements = Array.from(document.querySelectorAll('[contenteditable="true"]'));
         let newContent = '';
 
-        const mainEl = document.querySelector('main');
-        if (mainEl && mainEl.contentEditable === 'true') {
-            newContent = mainEl.innerHTML;
-        } else {
-            const sectionEls = document.querySelectorAll('section');
-            if (sectionEls.length > 0 && Array.from(sectionEls).some(el => el.contentEditable === 'true')) {
-                newContent = Array.from(sectionEls).map(el => el.outerHTML).join('\n');
+        if (editableElements.length > 0) {
+            // If a <main> tag is being edited, get its inner HTML. This implicitly excludes the contenteditable attribute.
+            if (editableElements[0].tagName.toLowerCase() === 'main') {
+                newContent = editableElements[0].innerHTML;
+            } else {
+                // Otherwise, we are editing <section> tags. The backend needs the HTML of all sections.
+                const allSections = document.querySelectorAll('section');
+                newContent = Array.from(allSections).map(el => {
+                    // For sections that were being edited, clone them to get their outerHTML 
+                    // without the temporary 'contenteditable' 
+                    if (el.contentEditable === 'true') {
+                        const clone = el.cloneNode(true);
+                        clone.removeAttribute('contenteditable');
+                        clone.removeAttribute('style');
+                        return clone.outerHTML;
+                    }
+                    return el.outerHTML;
+                }).join('\n');
             }
         }
 
@@ -283,7 +296,7 @@
         }
 
         try {
-            const response = await fetch('/webrobot.php?action=save_text_edit', {
+            const result = await webrobotFetch('/webrobot.php?action=save_text_edit', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -293,13 +306,17 @@
                 }),
             });
 
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.error || 'An unknown error occurred on the server.');
-            }
-
             showToast('Text Editor', result.message, true);
+
+            // Visually disable editing immediately after successful save.
+            editableElements.forEach(el => {
+                el.contentEditable = 'false';
+                el.style.outline = 'none';
+            });
+            // Also disable the save/cancel buttons to prevent re-submission
+            document.getElementById('save-text-btn').disabled = true;
+            document.getElementById('cancel-text-btn').disabled = true;
+
             // Reload the page to show the saved state
             setTimeout(() => window.location.reload(), 1500);
 
