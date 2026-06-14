@@ -7,8 +7,30 @@ define('DOC_ROOT', __DIR__ . '/../pages');
 // When true, apply_diff will always throw an exception.
 define('SIMULATE_PATCH_FAILURE', false);
 
-// New require for login checker
-require_once __DIR__ . '/WebRobotLoginChecker.php';
+// --- Load Configuration ---
+$projectRoot = dirname(DOC_ROOT);
+$configFile = $projectRoot . '/etc/webrobot_config.json';
+if (!file_exists($configFile)) {
+    http_response_code(500);
+    echo json_encode(['error' => "Configuration file not found: {$configFile}"]);
+    exit;
+}
+$configData = json_decode(file_get_contents($configFile), true);
+if (json_last_error() !== JSON_ERROR_NONE) {
+    http_response_code(500);
+    echo json_encode(['error' => "Error decoding configuration file: " . json_last_error_msg()]);
+    exit;
+}
+
+// --- Configure and load Login Checker ---
+$loginCheckerClass = isset($configData['login_checker_class']) ? $configData['login_checker_class'] : 'WebRobotLoginChecker_OAuth';
+$loginCheckerFile = __DIR__ . '/' . $loginCheckerClass . '.php';
+if (!file_exists($loginCheckerFile)) {
+    http_response_code(500);
+    echo json_encode(['error' => "Login checker file not found: {$loginCheckerFile}"]);
+    exit;
+}
+require_once $loginCheckerFile;
 
 /**
  * Handles all interactions with the Google Gemini API.
@@ -30,23 +52,10 @@ class GeminiService {
      * It sets up the API key, model, and log path, with fallbacks for each.
      *
      * @param WebRobotUpdater $updater An instance of WebRobotUpdater to access its helper methods.
+     * @param array $key_data The configuration data from webrobot_config.json.
      */
-    public function __construct(WebRobotUpdater $updater) {
+    public function __construct(WebRobotUpdater $updater, array $key_data) {
         $this->updater = $updater;
-
-        $projectRoot = dirname(DOC_ROOT); // e.g., /path/to/acms.cweb.com.au
-        $key_file = $projectRoot . '/etc/webrobot_config.json'; // Path to the configuration file
-
-        if (!file_exists($key_file)) {
-            throw new Exception("Configuration file not found: {$key_file}");
-        }
-
-        $json_content = file_get_contents($key_file);
-        $key_data = json_decode($json_content, true);
-
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new Exception("Error decoding configuration file: " . json_last_error_msg());
-        }
 
         if (empty($key_data['key'])) {
             throw new Exception("API 'key' is missing or empty in webrobot_config.json.");
@@ -605,8 +614,8 @@ class WebRobotUpdater {
      * Initializes the updater and its dependency, the GeminiService, passing a reference to itself
      * to allow the service to use its helper methods.
      */
-    public function __construct() {
-        $this->geminiService = new GeminiService($this);
+    public function __construct(array $configData) {
+        $this->geminiService = new GeminiService($this, $configData);
         try {
             $this->gitService = new GitService();
         } catch (Exception $e) {
@@ -1174,7 +1183,8 @@ $response = array();
 // The 'check_login_status' action is the only one that can be called without being logged in.
 // All other actions require an active, authorized session.
 if ($action !== 'check_login_status') {
-    $loginChecker = new \WebRobot\WebRobotLoginChecker();
+    $fullLoginCheckerClass = '\\WebRobot\\' . $loginCheckerClass;
+    $loginChecker = new $fullLoginCheckerClass($configData);
     $loginStatus = $loginChecker->isLoggedIn();
 
     if ($loginStatus !== true) {
@@ -1186,7 +1196,7 @@ if ($action !== 'check_login_status') {
         exit;
     }
 }
-$updater = new WebRobotUpdater();
+$updater = new WebRobotUpdater($configData);
 
 // Main action handler.
 try {
@@ -1204,7 +1214,8 @@ try {
             $response['usage'] = $result['usage'];
             break;
         case 'check_login_status':
-            $loginChecker = new \WebRobot\WebRobotLoginChecker();
+            $fullLoginCheckerClass = '\\WebRobot\\' . $loginCheckerClass;
+            $loginChecker = new $fullLoginCheckerClass($configData);
             $loginStatus = $loginChecker->isLoggedIn();
 
             if ($loginStatus === true) {
