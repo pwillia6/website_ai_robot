@@ -25,47 +25,293 @@
 
     // --- Editor UI ---
     const editorHTML = `
-        <style> #ai-editor-spinner.hidden, #upload-spinner.hidden { display: none !important; } </style>
-        <div id="ai-editor-bar" class="fixed top-0 left-0 right-0 bg-stone-900 text-white p-3 shadow-lg z-[100] flex items-start gap-4 text-sm transition-transform duration-300 -translate-y-full">
+        <style>
+            /* AI Editor: Self-contained styles to avoid host page conflicts */
+            #ai-editor-bar, #ai-editor-bar *, #ai-editor-bar *::before, #ai-editor-bar *::after,
+            .ai-editor-modal, .ai-editor-modal *, .ai-editor-modal *::before, .ai-editor-modal *::after {
+                box-sizing: border-box;
+            }
+            #ai-editor-bar, .ai-editor-modal, #ai-editor-toast {
+                --c-bg-base: #262626;
+                --c-bg-surface: #404040;
+                --c-bg-muted: #525252;
+                --c-border: #525252;
+                --c-text-base: #f5f5f5;
+                --c-text-muted: #a3a3a3;
+                --c-text-subtle: #737373;
+                --c-accent-blue: #3b82f6;
+                --c-accent-blue-hover: #2563eb;
+                --c-accent-gold: #f59e0b;
+                --c-accent-green: #22c55e;
+                --c-accent-red: #ef4444;
+                --c-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1);
+                font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            }
+            #ai-editor-bar {
+                position: fixed;
+                top: 0; left: 0; right: 0;
+                background-color: var(--c-bg-base);
+                color: var(--c-text-base);
+                padding: 0.75rem;
+                box-shadow: var(--c-shadow);
+                z-index: 100001;
+                display: flex;
+                align-items: flex-start;
+                gap: 1rem;
+                font-size: 14px;
+                line-height: 1.5;
+                transition: transform 0.3s ease-in-out;
+                transform: translateY(-100%);
+            }
+            #ai-editor-bar.editor-visible {
+                transform: translateY(0);
+            }
+            #ai-editor-bar button, #ai-editor-bar input, #ai-editor-bar textarea {
+                font-family: inherit;
+                font-size: inherit;
+                color: inherit;
+                margin: 0;
+            }
+            #ai-editor-bar button { cursor: pointer; background: none; border: none; padding: 0; }
+            .ai-editor-hidden { display: none !important; }
+            @keyframes ai-editor-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            .ai-editor-spinner { animation: ai-editor-spin 1s linear infinite; }
+
+            /* Toggle Button */
+            #ai-editor-toggle {
+                position: fixed;
+                top: 0.5rem; right: 0.5rem;
+                background-color: var(--c-accent-blue);
+                color: white;
+                width: 2.5rem; height: 2.5rem;
+                border-radius: 9999px;
+                box-shadow: var(--c-shadow);
+                z-index: 100000;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border: none;
+                cursor: pointer;
+                transition: all 0.2s ease;
+            }
+            #ai-editor-toggle:hover { background-color: var(--c-accent-blue-hover); transform: scale(1.1); }
+            #ai-editor-toggle.editor-visible { opacity: 0; pointer-events: none; }
+
+            /* Editor Bar Content */
+            #ai-editor-bar .mode-toggle-container { flex-shrink: 0; text-align: center; padding-top: 0.375rem; }
+            #ai-editor-bar .mode-toggle-container > * + * { margin-top: 0.25rem; }
+            #ai-editor-bar .mode-toggle-container .editor-brand { font-weight: 700; color: var(--c-accent-blue); display: flex; align-items: center; gap: 0.5rem; justify-content: center; }
+            #ai-editor-bar .mode-toggle-switch { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+            #ai-editor-bar .mode-toggle-switch span { font-weight: 600; font-size: 12px; }
+            #ai-editor-bar .mode-toggle-switch .label-ai { color: white; }
+            #ai-editor-bar .mode-toggle-switch .label-text { color: var(--c-text-muted); }
+            #ai-editor-bar .mode-toggle-switch input:checked ~ .label-ai { color: var(--c-text-muted); }
+            #ai-editor-bar .mode-toggle-switch input:checked ~ .label-text { color: white; }
+            #ai-editor-bar .toggle-switch-ui { position: relative; display: inline-flex; align-items: center; cursor: pointer; }
+            #ai-editor-bar .toggle-switch-ui input { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); border-width: 0; }
+            #ai-editor-bar .toggle-switch-ui .toggle-bg { width: 2.25rem; height: 1.25rem; background-color: var(--c-bg-surface); border-radius: 9999px; transition: background-color 0.2s ease; }
+            #ai-editor-bar .toggle-switch-ui .toggle-dot { content: ''; position: absolute; top: 2px; left: 2px; background-color: white; border: 1px solid var(--c-bg-muted); border-radius: 9999px; height: 1rem; width: 1rem; transition: transform 0.2s ease; }
+            #ai-editor-bar .toggle-switch-ui input:checked + .toggle-bg { background-color: var(--c-accent-blue); }
+            #ai-editor-bar .toggle-switch-ui input:checked + .toggle-bg .toggle-dot { transform: translateX(100%); border-color: white; }
+
+            #ai-editor-bar .editor-controls { display: flex; flex-grow: 1; align-items: flex-start; gap: 0.75rem; }
+            #ai-editor-bar textarea {
+                flex-grow: 1;
+                background-color: var(--c-bg-surface);
+                border: 1px solid var(--c-border);
+                border-radius: 0.5rem;
+                padding: 0.5rem 0.75rem;
+                color: var(--c-text-base);
+                resize: vertical;
+                min-height: 80px;
+            }
+            #ai-editor-bar textarea::placeholder { color: var(--c-text-subtle); }
+            #ai-editor-bar textarea:focus { outline: 2px solid transparent; outline-offset: 2px; box-shadow: 0 0 0 2px var(--c-bg-base), 0 0 0 4px var(--c-accent-gold); }
+            
+            #ai-editor-bar .btn-group { display: flex; flex-direction: column; gap: 0.5rem; flex-shrink: 0; }
+            #ai-editor-bar .btn-primary {
+                background-color: var(--c-accent-blue); color: white; font-weight: 600; padding: 0.625rem 1rem; border-radius: 0.375rem;
+                display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%; transition: background-color 0.2s ease;
+            }
+            #ai-editor-bar .btn-primary:hover { background-color: var(--c-accent-blue-hover); }
+            #ai-editor-bar .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+            #ai-editor-bar .btn-secondary-group { display: flex; align-items: center; gap: 0.375rem; }
+            #ai-editor-bar .btn-secondary {
+                flex: 1; color: var(--c-text-muted); font-weight: 600; padding: 0.375rem 0.75rem; border-radius: 0.375rem;
+                display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: 1px solid var(--c-border);
+                font-size: 12px; transition: all 0.2s ease;
+            }
+            #ai-editor-bar .btn-secondary:hover { background-color: var(--c-bg-surface); color: var(--c-text-base); }
+            #ai-editor-bar .btn-tertiary { background-color: var(--c-bg-muted); color: var(--c-text-base); }
+            #ai-editor-bar .btn-tertiary:hover { background-color: var(--c-text-subtle); }
+
+            #ai-editor-bar #ai-editor-close { color: var(--c-text-subtle); padding-top: 0.5rem; }
+            #ai-editor-bar #ai-editor-close:hover { color: white; }
+
+            /* Modals */
+            .ai-editor-modal { position: fixed; inset: 0; background-color: rgba(0,0,0,0.6); z-index: 100002; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+            .ai-editor-modal-content { background-color: var(--c-bg-base); color: var(--c-text-base); border-radius: 0.5rem; box-shadow: var(--c-shadow); width: 100%; display: flex; flex-direction: column; }
+            #ai-editor-history-modal .ai-editor-modal-content { max-width: 56rem; }
+            #ai-editor-scope-modal .ai-editor-modal-content { max-width: 42rem; }
+            #ai-editor-uploads-modal .ai-editor-modal-content { max-width: 80rem; height: 80vh; }
+            .ai-editor-modal-header { padding: 1rem; border-bottom: 1px solid var(--c-border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+            .ai-editor-modal-header h3 { font-weight: 700; display: flex; align-items: center; gap: 0.5rem; font-size: 1.125rem; }
+            .ai-editor-modal-header button { font-size: 1.5rem; line-height: 1; color: var(--c-text-muted); }
+            .ai-editor-modal-header button:hover { color: white; }
+            .ai-editor-modal-body { padding: 1rem; overflow-y: auto; flex-grow: 1; }
+            .ai-editor-modal-footer { padding: 0.5rem; background-color: rgba(0,0,0,0.2); border-top: 1px solid var(--c-border); text-align: right; flex-shrink: 0; }
+            .ai-editor-modal-footer button { font-size: 12px; background-color: var(--c-accent-blue); color: white; border-radius: 0.375rem; font-weight: 600; padding: 0.375rem 1rem; }
+            .ai-editor-modal-footer button:hover { background-color: var(--c-accent-blue-hover); }
+
+            /* Textareas in Modals */
+            .ai-editor-modal textarea {
+                background-color: var(--c-bg-surface);
+                border: 1px solid var(--c-border);
+                border-radius: 0.5rem;
+                padding: 0.5rem 0.75rem;
+                color: var(--c-text-base);
+                width: 100%;
+                resize: vertical;
+            }
+            .ai-editor-modal textarea::placeholder { color: var(--c-text-subtle); }
+            .ai-editor-modal textarea:focus {
+                outline: 2px solid transparent;
+                outline-offset: 2px;
+                box-shadow: 0 0 0 2px var(--c-bg-base), 0 0 0 4px var(--c-accent-gold);
+            }
+
+            /* Custom Scrollbar */
+            .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+            .custom-scrollbar::-webkit-scrollbar-track { background: var(--c-bg-base); }
+            .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--c-bg-muted); border-radius: 4px; }
+            .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--c-text-subtle); }
+
+            /* History List */
+            #ai-editor-history-list > div { padding: 0.5rem; border-radius: 0.375rem; transition: background-color 0.2s ease; border: 1px solid transparent; }
+            #ai-editor-history-list > div:hover { background-color: var(--c-bg-surface); }
+            #ai-editor-history-list > div > div:first-child { display: flex; justify-content: space-between; align-items: center; font-size: 12px; }
+            #ai-editor-history-list .commit-hash { font-family: monospace; }
+            #ai-editor-history-list .diff-link { color: var(--c-accent-gold); text-decoration: none; margin-left: 0.5rem; }
+            #ai-editor-history-list .diff-link:hover { text-decoration: underline; }
+            #ai-editor-history-list .commit-date { color: var(--c-text-muted); margin-left: 0.5rem; }
+            #ai-editor-history-list .revert-indicator { font-size: 10px; font-weight: 600; background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 8px; border-radius: 9999px; border: 1px solid rgba(245, 158, 11, 0.3); margin-left: 0.5rem; }
+            #ai-editor-history-list .rollback-btn { background-color: var(--c-bg-muted); color: var(--c-text-base); font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 12px; }
+            #ai-editor-history-list .rollback-btn:hover { background-color: var(--c-text-subtle); }
+            #ai-editor-history-list .current-tag { background-color: var(--c-accent-green); color: white; font-weight: 600; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+            #ai-editor-history-list .prompt-container { margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.2); border: 1px solid var(--c-border); border-radius: 0.25rem; }
+            #ai-editor-history-list .prompt-label { color: var(--c-text-subtle); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
+            #ai-editor-history-list .prompt-text { color: var(--c-text-muted); font-size: 12px; white-space: pre-wrap; }
+            #ai-editor-history-list .diff-container { display: none; margin-top: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.3); border-radius: 0.375rem; max-height: 15rem; overflow-y: auto; }
+            #ai-editor-history-list .diff-container pre { font-size: 12px; white-space: pre-wrap; font-family: monospace; }
+            #ai-editor-history-list .diff-container .diff-add-word { background-color: rgba(34, 197, 94, 0.3); }
+            #ai-editor-history-list .diff-container .diff-del-word { background-color: rgba(239, 68, 68, 0.3); }
+
+            /* Scope Modal */
+            #ai-editor-scope-modal label { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; background-color: rgba(0,0,0,0.2); border-radius: 0.375rem; cursor: pointer; }
+            #ai-editor-scope-modal label:hover { background-color: var(--c-bg-surface); }
+            #ai-editor-scope-modal label.disabled { opacity: 0.5; cursor: default; }
+            #ai-editor-scope-modal input[type="checkbox"] { height: 1rem; width: 1rem; border-radius: 0.25rem; background-color: var(--c-bg-surface); border: 1px solid var(--c-border); accent-color: var(--c-accent-blue); }
+            #ai-editor-scope-modal input[type="checkbox"]:focus { box-shadow: 0 0 0 2px var(--c-accent-gold); }
+            #ai-editor-scope-modal #ai-editor-target-files { padding-left: 0.5rem; border-left: 1px solid var(--c-border); margin-left: 0.5rem; display: flex; flex-direction: column; gap: 0.5rem; }
+
+            /* Uploads Modal */
+            #ai-editor-uploads-modal .uploads-container { display: flex; flex-grow: 1; overflow: hidden; }
+            #ai-editor-uploads-modal .upload-form-panel { width: 33.333%; padding: 1rem; border-right: 1px solid var(--c-border); display: flex; flex-direction: column; }
+            #ai-editor-uploads-modal .upload-lists-panel { width: 66.667%; padding: 1rem; overflow-y: auto; }
+            #upload-dropzone { flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 2px dashed var(--c-border); border-radius: 0.5rem; padding: 1rem; text-align: center; color: var(--c-text-muted); transition: all 0.2s ease; }
+            #upload-dropzone.drag-over { border-color: var(--c-accent-gold); background-color: var(--c-bg-surface); }
+            #upload-browse-btn { margin-top: 0.5rem; color: var(--c-accent-gold); font-weight: 600; }
+            #upload-browse-btn:hover { text-decoration: underline; }
+            #upload-preview-container > div { padding: 0.5rem; background-color: var(--c-bg-surface); border-radius: 0.375rem; font-size: 12px; color: white; display: flex; align-items: center; gap: 0.5rem; }
+            #upload-preview-container .file-name { font-weight: 600; }
+            #upload-preview-container .file-size { color: var(--c-text-muted); }
+            #uploads-image-list, #uploads-document-list { display: flex; flex-direction: column; gap: 0.5rem; }
+            .upload-list-item { background-color: var(--c-bg-surface); padding: 0.5rem; border-radius: 0.375rem; display: flex; align-items: flex-start; justify-content: space-between; font-size: 12px; }
+            .upload-list-item .item-details { display: flex; align-items: flex-start; flex-grow: 1; }
+            .upload-list-item .item-thumbnail { position: relative; flex-shrink: 0; margin-right: 0.75rem; }
+            .upload-list-item .item-thumbnail .preview-popup { position: absolute; bottom: 0; left: 3rem; width: 200px; background-color: var(--c-bg-base); border: 1px solid var(--c-border); border-radius: 0.5rem; box-shadow: var(--c-shadow); padding: 0.25rem; display: none; z-index: 10; }
+            .upload-list-item .item-thumbnail:hover .preview-popup { display: block; }
+            .upload-list-item .item-thumbnail .doc-icon { width: 2.5rem; height: 2.5rem; display: flex; align-items: center; justify-content: center; background-color: var(--c-bg-muted); border-radius: 0.375rem; color: var(--c-text-muted); }
+            .upload-list-item .item-info { flex-grow: 1; }
+            .upload-list-item .item-filename { font-weight: 600; color: var(--c-text-base); }
+            .upload-list-item .description-view { color: var(--c-text-muted); }
+            .upload-list-item .description-edit { display: none; }
+            .upload-list-item .description-edit input { width: 100%; background-color: var(--c-bg-base); border: 1px solid var(--c-border); border-radius: 0.25rem; padding: 0.25rem 0.5rem; font-size: 12px; color: white; }
+            .upload-list-item .description-edit .desc-actions { margin-top: 0.375rem; display: flex; gap: 0.5rem; }
+            .upload-list-item .description-edit .save-desc-btn { color: var(--c-accent-gold); }
+            .upload-list-item .description-edit .cancel-desc-btn { color: var(--c-text-muted); }
+            .upload-list-item .item-actions { flex-shrink: 0; margin-left: 0.5rem; display: flex; gap: 0.25rem; }
+            .upload-list-item .item-actions button { color: var(--c-text-muted); padding: 0.25rem 0.5rem; }
+            .upload-list-item .item-actions button:hover { color: white; }
+            .upload-list-item .item-actions .delete-upload-btn:hover { color: var(--c-accent-red); }
+
+            /* Toast / Notification */
+            #ai-editor-toast {
+                position: fixed;
+                bottom: 1.5rem;
+                right: 1.5rem;
+                background-color: var(--c-bg-base);
+                color: var(--c-text-base);
+                padding: 1rem 1.25rem;
+                border-radius: 0.75rem;
+                box-shadow: var(--c-shadow);
+                max-width: 24rem;
+                z-index: 100003;
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+                transition: opacity 0.3s ease, transform 0.3s ease;
+                opacity: 0;
+                transform: translateY(20px);
+                pointer-events: none;
+            }
+            #ai-editor-toast.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+            #ai-editor-toast-icon { padding: 0.375rem; border-radius: 0.5rem; font-size: 14px; border: 1px solid transparent; }
+            #ai-editor-toast-icon.success { background-color: rgba(34, 197, 94, 0.2); color: var(--c-accent-green); border-color: rgba(34, 197, 94, 0.3); }
+            #ai-editor-toast-icon.error { background-color: rgba(239, 68, 68, 0.2); color: var(--c-accent-red); border-color: rgba(239, 68, 68, 0.3); }
+            #ai-editor-toast-title { font-family: var(--font-serif, serif); font-weight: 700; font-size: 12px; display: block; }
+            #ai-editor-toast-body { font-size: 11px; line-height: 1.5; color: var(--c-text-muted); }
+        </style>
+        <div id="ai-editor-bar">
             
             <!-- Editor Mode Toggle -->
-            <div class="flex-shrink-0 text-center pt-1.5 space-y-1">
-                <div class="font-bold text-rotary-azure flex items-center gap-2">
+            <div class="mode-toggle-container">
+                <div class="editor-brand">
                     <i class="fa-solid fa-robot"></i>
                     <span>Editor</span>
                 </div>
-                <div class="flex items-center justify-center space-x-2">
-                    <span id="ai-mode-label" class="font-semibold text-xs text-white">AI</span>
-                    <label for="mode-toggle" class="relative inline-flex items-center cursor-pointer">
-                        <input type="checkbox" value="" id="mode-toggle" class="sr-only peer">
-                        <div class="w-9 h-5 bg-stone-700 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-stone-600 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rotary-blue"></div>
+                <div class="mode-toggle-switch">
+                    <span class="label-ai">AI</span>
+                    <label class="toggle-switch-ui">
+                        <input type="checkbox" id="mode-toggle">
+                        <div class="toggle-bg"><div class="toggle-dot"></div></div>
                     </label>
-                    <span id="text-mode-label" class="font-semibold text-xs text-stone-400">Text</span>
+                    <span class="label-text">Text</span>
                 </div>
             </div>
 
             <!-- AI Controls -->
-            <div id="ai-editor-controls" class="flex-grow flex items-start gap-3">
-                <textarea id="ai-editor-prompt" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold resize-y" placeholder="Enter your edit request... (Cmd/Ctrl + Enter to submit)"></textarea>
-                <div class="flex flex-col gap-2 flex-shrink-0">
-                    <button id="ai-editor-generate" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
+            <div id="ai-editor-controls" class="editor-controls">
+                <textarea id="ai-editor-prompt" rows="3" placeholder="Enter your edit request... (Cmd/Ctrl + Enter to submit)"></textarea>
+                <div class="btn-group">
+                    <button id="ai-editor-generate" class="btn-primary">
                         <span id="ai-editor-btn-text">Generate</span>
-                        <i id="ai-editor-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
+                        <i id="ai-editor-spinner" class="fa-solid fa-spinner ai-editor-spinner ai-editor-hidden"></i>
                     </button>
-                    <div class="flex items-center gap-1.5">
-                        <button id="ai-editor-history" title="View file history" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                    <div class="btn-secondary-group">
+                        <button id="ai-editor-history" title="View file history" class="btn-secondary">
                             <i class="fa-solid fa-history"></i>
                             <span>History</span>
                         </button>
-                        <button id="ai-editor-new-chat" title="Start a new conversation" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                        <button id="ai-editor-new-chat" title="Start a new conversation" class="btn-secondary">
                             <i class="fa-solid fa-comment-slash"></i>
                             <span>New Chat</span>
                         </button>
-                        <button id="ai-editor-scope" title="Set edit scope" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                        <button id="ai-editor-scope" title="Set edit scope" class="btn-secondary">
                             <i class="fa-solid fa-crosshairs"></i>
                             <span>Scope</span>
                         </button>
-                        <button id="ai-editor-uploads" title="Manage Uploads" class="flex-1 text-stone-400 hover:text-white font-semibold px-3 py-1.5 rounded-md text-xs flex items-center justify-center gap-2 border border-stone-700 hover:bg-stone-800">
+                        <button id="ai-editor-uploads" title="Manage Uploads" class="btn-secondary">
                             <i class="fa-solid fa-upload"></i>
                             <span>Uploads</span>
                         </button>
@@ -74,93 +320,96 @@
             </div>
 
             <!-- Text Editor Controls -->
-            <div id="text-editor-controls" class="hidden flex-grow items-start gap-3">
-                <textarea id="text-editor-comment" rows="3" class="flex-grow bg-stone-800 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold resize-y" placeholder="Add a comment about your changes (optional)..."></textarea>
-                <div class="flex flex-col gap-2 flex-shrink-0">
-                    <button id="save-text-btn" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2.5 rounded-md text-sm flex items-center justify-center gap-2 w-full">
-                        <i class="fa-solid fa-save mr-1"></i> Save Changes
+            <div id="text-editor-controls" class="editor-controls ai-editor-hidden">
+                <textarea id="text-editor-comment" rows="3" placeholder="Add a comment about your changes (optional)..."></textarea>
+                <div class="btn-group">
+                    <button id="save-text-btn" class="btn-primary">
+                        <i class="fa-solid fa-save"></i> Save Changes
                     </button>
-                    <button id="cancel-text-btn" class="bg-stone-700 hover:bg-stone-600 text-stone-300 font-semibold px-4 py-2.5 rounded-md text-sm w-full">
+                    <button id="cancel-text-btn" class="btn-primary btn-tertiary">
                         Cancel
                     </button>
                 </div>
             </div>
 
-            <button id="ai-editor-close" class="text-stone-500 hover:text-white pt-2" title="Close Editor">
+            <button id="ai-editor-close" title="Close Editor">
                 <i class="fa-solid fa-times"></i>
             </button>
         </div>
-        <div id="ai-editor-history-modal" class="fixed inset-0 bg-black/60 z-[101] hidden items-center justify-center p-4">
-            <div class="bg-stone-800 rounded-lg shadow-2xl w-full max-w-lg">
-                <div class="p-4 border-b border-stone-700 flex justify-between items-center">
-                    <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-history"></i>File History</h3>
-                    <button id="ai-editor-history-close" class="text-stone-400 hover:text-white text-2xl leading-none">&times;</button>
+        <div id="ai-editor-history-modal" class="ai-editor-modal ai-editor-hidden">
+            <div class="ai-editor-modal-content">
+                <div class="ai-editor-modal-header">
+                    <h3><i class="fa-solid fa-history"></i>File History</h3>
+                    <button id="ai-editor-history-close">&times;</button>
                 </div>
-                <div id="ai-editor-history-list" class="p-2 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                    <!-- Backup list will be rendered here -->
-                </div>
+                <div id="ai-editor-history-list" class="ai-editor-modal-body custom-scrollbar"></div>
             </div>
         </div>
-        <div id="ai-editor-scope-modal" class="fixed inset-0 bg-black/60 z-[101] hidden items-center justify-center p-4">
-            <div class="bg-stone-800 rounded-lg shadow-2xl w-full max-w-lg">
-                <div class="p-4 border-b border-stone-700 flex justify-between items-center">
-                    <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-crosshairs"></i>Edit Scope</h3>
-                    <button id="ai-editor-scope-close" class="text-stone-400 hover:text-white text-2xl leading-none">&times;</button>
+        <div id="ai-editor-scope-modal" class="ai-editor-modal ai-editor-hidden">
+            <div class="ai-editor-modal-content">
+                <div class="ai-editor-modal-header">
+                    <h3><i class="fa-solid fa-crosshairs"></i>Edit Scope</h3>
+                    <button id="ai-editor-scope-close">&times;</button>
                 </div>
-                <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+                <div class="ai-editor-modal-body custom-scrollbar">
                     <div>
-                        <h4 class="text-sm font-bold text-stone-300 mb-2">Target Pages (HTML)</h4>
-                        <div class="space-y-2 text-xs">
-                            <label class="flex items-center space-x-2 p-2 bg-stone-900/50 rounded-md">
-                                <input type="checkbox" id="ai-update-all-html" class="form-checkbox h-4 w-4 text-rotary-blue bg-stone-700 border-stone-600 rounded focus:ring-rotary-gold">
-                                <span class="text-stone-200 font-semibold">Update All HTML Pages</span>
+                        <h4 style="font-size: 12px; font-weight: 700; color: var(--c-text-muted); margin-bottom: 0.5rem;">Target Pages (HTML)</h4>
+                        <div style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 12px;">
+                            <label>
+                                <input type="checkbox" id="ai-update-all-html">
+                                <span>Update All HTML Pages</span>
                             </label>
-                            <div id="ai-editor-target-files" class="space-y-2 pl-2 border-l border-stone-700 ml-2">
-                                <!-- HTML files list will be rendered here -->
-                            </div>
+                            <div id="ai-editor-target-files"></div>
                         </div>
                     </div>
                 </div>
-                <div class="p-2 bg-stone-900/50 border-t border-stone-700 text-right">
-                    <button id="ai-editor-scope-done" class="bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-1.5 rounded-md text-xs">Done</button>
+                <div class="ai-editor-modal-footer">
+                    <button id="ai-editor-scope-done">Done</button>
                 </div>
             </div>
         </div>
-        <div id="ai-editor-uploads-modal" class="fixed inset-0 bg-black/60 z-[101] hidden items-center justify-center p-4">
-            <div class="bg-stone-800 rounded-lg shadow-2xl w-full max-w-4xl flex flex-col" style="height: 80vh;">
-                <div class="p-4 border-b border-stone-700 flex justify-between items-center flex-shrink-0">
-                    <h3 class="font-bold text-white flex items-center gap-2"><i class="fa-solid fa-upload"></i>File Uploads</h3>
-                    <button id="ai-editor-uploads-close" class="text-stone-400 hover:text-white text-2xl leading-none">&times;</button>
+        <div id="ai-editor-uploads-modal" class="ai-editor-modal ai-editor-hidden">
+            <div class="ai-editor-modal-content">
+                <div class="ai-editor-modal-header">
+                    <h3><i class="fa-solid fa-upload"></i>File Uploads</h3>
+                    <button id="ai-editor-uploads-close">&times;</button>
                 </div>
-                <div class="flex-grow flex overflow-hidden">
+                <div class="uploads-container">
                     <!-- Upload Form -->
-                    <div class="w-1/3 p-4 border-r border-stone-700 flex flex-col">
-                        <h4 class="text-sm font-bold text-stone-300 mb-3">Upload New File</h4>
-                        <div id="upload-dropzone" class="flex-grow flex flex-col items-center justify-center border-2 border-dashed border-stone-600 rounded-lg p-4 text-center text-stone-400 transition-colors hover:border-rotary-gold hover:bg-stone-700/50">
-                            <i class="fa-solid fa-cloud-arrow-up text-3xl mb-2"></i>
-                            <p class="text-sm">Drag & drop files here or</p>
-                            <button id="upload-browse-btn" class="mt-2 text-rotary-gold hover:underline font-semibold">browse to upload</button>
-                            <input type="file" id="upload-file-input" class="hidden" multiple>
+                    <div class="upload-form-panel">
+                        <h4 style="font-size: 12px; font-weight: 700; color: var(--c-text-muted); margin-bottom: 0.75rem;">Upload New File</h4>
+                        <div id="upload-dropzone">
+                            <i class="fa-solid fa-cloud-arrow-up" style="font-size: 1.875rem; margin-bottom: 0.5rem;"></i>
+                            <p style="font-size: 14px;">Drag & drop files here or</p>
+                            <button id="upload-browse-btn">browse to upload</button>
+                            <input type="file" id="upload-file-input" class="ai-editor-hidden" multiple>
                         </div>
-                        <div id="upload-preview-container" class="mt-3 space-y-2"></div>
-                        <textarea id="upload-description" rows="2" class="w-full bg-stone-900 border border-stone-700 rounded-lg px-3 py-2 text-sm text-white placeholder-stone-500 focus:outline-none focus:ring-1 focus:ring-rotary-gold mt-3" placeholder="File description..."></textarea>
-                        <button id="upload-submit-btn" class="mt-3 w-full bg-rotary-blue hover:bg-rotary-royal text-white font-semibold px-4 py-2 rounded-md text-sm flex items-center justify-center gap-2">
+                        <div id="upload-preview-container" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                        <textarea id="upload-description" rows="2" style="margin-top: 0.75rem;" placeholder="File description..."></textarea>
+                        <button id="upload-submit-btn" class="btn-primary" style="margin-top: 0.75rem;">
                             <span id="upload-btn-text">Upload</span>
-                            <i id="upload-spinner" class="fa-solid fa-spinner fa-spin hidden"></i>
+                            <i id="upload-spinner" class="fa-solid fa-spinner ai-editor-spinner ai-editor-hidden"></i>
                         </button>
                     </div>
                     <!-- File Lists -->
-                    <div class="w-2/3 p-4 overflow-y-auto custom-scrollbar">
+                    <div class="upload-lists-panel custom-scrollbar">
                         <div>
-                            <h4 class="text-sm font-bold text-stone-300 mb-2">Images</h4>
-                            <div id="uploads-image-list" class="space-y-2"></div>
+                            <h4 style="font-size: 12px; font-weight: 700; color: var(--c-text-muted); margin-bottom: 0.5rem;">Images</h4>
+                            <div id="uploads-image-list"></div>
                         </div>
-                        <div class="mt-6">
-                            <h4 class="text-sm font-bold text-stone-300 mb-2">Documents</h4>
-                            <div id="uploads-document-list" class="space-y-2"></div>
+                        <div style="margin-top: 1.5rem;">
+                            <h4 style="font-size: 12px; font-weight: 700; color: var(--c-text-muted); margin-bottom: 0.5rem;">Documents</h4>
+                            <div id="uploads-document-list"></div>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div id="ai-editor-toast">
+            <div id="ai-editor-toast-icon"></div>
+            <div>
+                <strong id="ai-editor-toast-title"></strong>
+                <p id="ai-editor-toast-body"></p>
             </div>
         </div>
     `;
@@ -205,17 +454,11 @@
         const textEditorControls = document.getElementById('text-editor-controls');
 
         const isTextMode = modeToggle.checked;
-        const wasInTextMode = elementsToEdit.some(el => el.contentEditable === 'true');
 
         if (isTextMode) {
             // --- Enable Text Editor Mode ---
-            if (aiEditorControls) aiEditorControls.style.display = 'none';
-            if (textEditorControls) textEditorControls.style.display = 'flex';
-            
-            aiModeLabel.classList.remove('text-white');
-            aiModeLabel.classList.add('text-stone-400');
-            textModeLabel.classList.add('text-white');
-            textModeLabel.classList.remove('text-stone-400');
+            if (aiEditorControls) aiEditorControls.classList.add('ai-editor-hidden');
+            if (textEditorControls) textEditorControls.classList.remove('ai-editor-hidden');
 
             // Reset dynamically generated content before making the main tag editable.
             resetGeneratedContent();
@@ -226,31 +469,49 @@
                 el.style.minHeight = '150px';
             });
             elementsToEdit[0].focus();
-        } else {
-            // --- Disable Text Editor Mode (Return to AI/View) ---
-            if (wasInTextMode) {
-                if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
-                    window.location.reload(); // Discard changes and reset state.
-                } else {
-                    // User doesn't want to cancel, so revert the toggle to stay in text mode.
-                    modeToggle.checked = true;
-                }
-                return; // Stop further execution.
+        } else { // Switching back to AI mode
+            const wasInTextMode = elementsToEdit.some(el => el.isContentEditable);
+            if (wasInTextMode && !confirm('Are you sure you want to cancel? All changes will be lost.')) {
+                modeToggle.checked = true; // Revert toggle if user cancels
+                return;
             }
-
-            if (aiEditorControls) aiEditorControls.style.display = 'flex';
-            if (textEditorControls) textEditorControls.style.display = 'none';
-
-            aiModeLabel.classList.add('text-white');
-            aiModeLabel.classList.remove('text-stone-400');
-            textModeLabel.classList.remove('text-white');
-            textModeLabel.classList.add('text-stone-400');
+            if (aiEditorControls) aiEditorControls.classList.remove('ai-editor-hidden');
+            if (textEditorControls) textEditorControls.classList.add('ai-editor-hidden');
 
             elementsToEdit.forEach(el => {
                 el.contentEditable = 'false';
                 el.style.outline = 'none';
             });
         }
+    }
+
+    /**
+     * Displays a toast notification.
+     * @param {string} title The title of the toast.
+     * @param {string} body The message body.
+     * @param {boolean} isSuccess Whether the toast indicates success or an error.
+     */
+    function showToast(title, body, isSuccess = true) {
+        const toast = document.getElementById('ai-editor-toast');
+        if (!toast) {
+            // If the editor isn't fully initialized, fall back to a simple alert.
+            alert(`${title}: ${body}`);
+            return;
+        }
+        
+        const toastTitle = document.getElementById('ai-editor-toast-title');
+        const toastBody = document.getElementById('ai-editor-toast-body');
+        const toastIcon = document.getElementById('ai-editor-toast-icon');
+
+        toastTitle.textContent = title;
+        toastBody.textContent = body;
+
+        toastIcon.innerHTML = isSuccess ? '<i class="fa-solid fa-check"></i>' : '<i class="fa-solid fa-triangle-exclamation"></i>';
+        toastIcon.className = isSuccess ? 'success' : 'error';
+        
+        toast.classList.add('visible');
+
+        setTimeout(() => { toast.classList.remove('visible'); }, 5000);
     }
 
     /**
@@ -395,10 +656,10 @@
         const bar = document.getElementById('ai-editor-bar');
         const toggleBtn = document.getElementById('ai-editor-toggle');
         if (bar && toggleBtn) {
-            bar.classList.toggle('-translate-y-full');
-            toggleBtn.classList.toggle('opacity-0');
-            toggleBtn.classList.toggle('pointer-events-none');
-            if (!bar.classList.contains('-translate-y-full')) {
+            bar.classList.toggle('editor-visible');
+            toggleBtn.classList.toggle('editor-visible');
+            // The bar's own class now controls its visibility, not a utility class
+            if (bar.classList.contains('editor-visible')) {
                 document.getElementById('ai-editor-prompt')?.focus();
             }
         }
@@ -437,7 +698,7 @@
 
         generateBtn.disabled = true;
         btnText.textContent = 'Generating...';
-        spinner.classList.remove('hidden');
+        spinner.classList.remove('ai-editor-hidden');
 
         try {
             // Collect scope data
@@ -491,7 +752,7 @@
             showToast('AI Editor Error', error.message, false);
             generateBtn.disabled = false;
             btnText.textContent = 'Generate';
-            spinner.classList.add('hidden');
+            spinner.classList.add('ai-editor-hidden');
         }
     }
 
@@ -500,8 +761,7 @@
         const listContainer = document.getElementById('ai-editor-history-list');
         if (!modal || !listContainer) return;
 
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.classList.remove('ai-editor-hidden');
         listContainer.innerHTML = '<div class="p-4 text-center text-stone-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading history...</div>';
 
         try {
@@ -511,13 +771,13 @@
             });
             if (data.commits && data.commits.length > 0) {
                 listContainer.innerHTML = data.commits.map((backup, index) => {
-                    const isCurrent = index === 0;
+                    const isCurrent = index === 0; // Newest commit is the current one
                     const isRevert = backup.is_revert;
 
                     const promptHtml = backup.prompt ? `
-                        <div class="mt-2 p-2 bg-stone-900/50 border border-stone-700 rounded">
-                            <div class="text-stone-500 text-[10px] font-bold uppercase tracking-wider mb-1">Prompt</div>
-                            <div class="text-stone-300 text-xs whitespace-pre-wrap">${backup.prompt}</div>
+                        <div class="prompt-container">
+                            <div class="prompt-label">Prompt</div>
+                            <div class="prompt-text">${backup.prompt}</div>
                         </div>
                     ` : '';
 
@@ -527,31 +787,29 @@
                         : '';
 
                     const revertIndicatorHtml = isRevert 
-                        ? `<span class="ml-2 text-xs font-semibold bg-yellow-400/20 text-yellow-300 px-2 py-0.5 rounded-full border border-yellow-400/30"><i class="fa-solid fa-undo mr-1"></i>Revert</span>` 
+                        ? `<span class="revert-indicator"><i class="fa-solid fa-undo" style="margin-right: 0.25rem;"></i>Revert</span>` 
                         : '';
 
                     let rollbackButtonHtml;
                     if (isCurrent) {
-                        rollbackButtonHtml = `<span class="bg-brandGreen-700 text-white font-semibold px-3 py-1 rounded-md text-[10px] uppercase tracking-wider">Current</span>`;
+                        rollbackButtonHtml = `<span class="current-tag">Current</span>`;
                     } else {
                         rollbackButtonHtml = `<button data-commit="${backup.file}" class="rollback-btn bg-stone-600 hover:bg-stone-500 text-white font-semibold px-3 py-1 rounded-md">Revert</button>`;
                     }
 
-                    const currentVersionClasses = isCurrent ? 'bg-stone-700/75 border border-brandGreen-700' : 'border border-transparent hover:bg-stone-700/50';
-
                     return `
-                    <div class="p-2 rounded-md transition-colors ${currentVersionClasses}">
-                        <div class="flex justify-between items-center text-xs">
-                            <div>
-                                <span class="font-mono text-stone-300">${backup.file.substring(0, 7)}</span>
+                    <div class="history-item ${isCurrent ? 'current' : ''}">
+                        <div class="history-item-header">
+                            <div class="history-item-meta">
+                                <span class="commit-hash">${backup.file.substring(0, 7)}</span>
                                 ${diffLinkHtml}
-                                <span class="text-stone-400 ml-2">${backup.date}</span>
+                                <span class="commit-date">${backup.date}</span>
                                 ${revertIndicatorHtml}
                             </div>
                             ${rollbackButtonHtml}
                         </div>
                         ${promptHtml}
-                        <div class="diff-container hidden mt-2 p-2 bg-black/50 rounded-md max-h-60 overflow-y-auto custom-scrollbar">
+                        <div class="diff-container">
                             <pre class="text-xs text-white whitespace-pre-wrap font-mono"></pre>
                         </div>
                     </div>`;
@@ -569,8 +827,7 @@
     function hideHistoryModal() {
         const modal = document.getElementById('ai-editor-history-modal');
         if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            modal.classList.add('ai-editor-hidden');
         }
     }
 
@@ -578,8 +835,7 @@
         const modal = document.getElementById('ai-editor-scope-modal');
         if (!modal) return;
 
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.classList.remove('ai-editor-hidden');
 
         const targetContainer = document.getElementById('ai-editor-target-files');
         if (!targetContainer) return;
@@ -596,10 +852,10 @@
                 const currentFile = getCurrentFilePath();
                 targetContainer.innerHTML = sitemap.html_pages.map(page => {
                     const isCurrentPage = page.path === currentFile;
-                    return `
-                    <label class="flex items-center space-x-2 p-2 bg-stone-900/50 rounded-md hover:bg-stone-700/50 cursor-pointer ${isCurrentPage ? 'opacity-50' : ''}">
-                        <input type="checkbox" class="form-checkbox h-4 w-4 text-rotary-blue bg-stone-700 border-stone-600 rounded focus:ring-rotary-gold ai-target-file" value="${page.path}" ${isCurrentPage ? 'checked disabled' : ''}>
-                        <span class="text-stone-300">${page.title} <span class="text-stone-500 font-mono text-[10px]">(${page.path})</span></span>
+                    return ` 
+                    <label class="${isCurrentPage ? 'disabled' : ''}">
+                        <input type="checkbox" class="ai-target-file" value="${page.path}" ${isCurrentPage ? 'checked disabled' : ''}>
+                        <span>${page.title} <span style="color: var(--c-text-subtle); font-family: monospace; font-size: 10px;">(${page.path})</span></span>
                     </label>
                 `}).join('');
             } else {
@@ -615,8 +871,7 @@
     function hideScopeModal() {
         const modal = document.getElementById('ai-editor-scope-modal');
         if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            modal.classList.add('ai-editor-hidden');
         }
     }
 
@@ -679,7 +934,7 @@
 
         // Toggle visibility if already loaded
         if (diffContainer.dataset.loaded === 'true') {
-            diffContainer.classList.toggle('hidden');
+            diffContainer.classList.toggle('ai-editor-hidden');
             return;
         }
 
@@ -729,9 +984,9 @@
                 if (line.startsWith('diff --git')) {
                     const parts = line.split(' ');
                     const filename = parts[3] ? parts[3].substring(2) : 'unknown file';
-                    const displayTitle = titleMap.get(filename) || filename;
+                    const displayTitle = titleMap.get(filename) || filename; 
                     isJsonFile = filename.endsWith('.json');
-                    formattedHtml += `<span class="text-white font-bold">${displayTitle}</span>\n`;
+                    formattedHtml += `<span class="diff-filename">${displayTitle}</span>\n`;
                     i++;
                     continue;
                 }
@@ -751,19 +1006,19 @@
                         const escapedValue = document.createElement('div');
                         escapedValue.textContent = part.value;
                         if (part.added) {
-                            plusHtml += `<span class="bg-green-800/50 text-green-200">${escapedValue.innerHTML}</span>`;
+                            plusHtml += `<span class="diff-add-word">${escapedValue.innerHTML}</span>`;
                         } else if (part.removed) {
-                            minusHtml += `<span class="bg-red-800/50 text-red-200">${escapedValue.innerHTML}</span>`;
+                            minusHtml += `<span class="diff-del-word">${escapedValue.innerHTML}</span>`;
                         } else {
                             minusHtml += escapedValue.innerHTML;
                             plusHtml += escapedValue.innerHTML;
                         }
                     });
                     if (cleanMinus.trim().length > 0) {
-                        formattedHtml += `<span class="text-red-400">- ${minusHtml}</span>\n`;
+                        formattedHtml += `<span class="diff-del">- ${minusHtml}</span>\n`;
                     }
                     if (cleanPlus.trim().length > 0) {
-                        formattedHtml += `<span class="text-green-400">+ ${plusHtml}</span>\n`;
+                        formattedHtml += `<span class="diff-add">+ ${plusHtml}</span>\n`;
                     }
                     i += 2; // Skip next line as it has been processed
                 } else if (line.startsWith('+') && !line.startsWith('+++')) {
@@ -772,7 +1027,7 @@
                         cleanText = cleanText.replace(/\t/g, ' ').replace(/ +/g, ' ');
                     }
                     if (cleanText.trim().length > 0) {
-                        formattedHtml += `<span class="text-green-400">+ ${cleanText}</span>\n`;
+                        formattedHtml += `<span class="diff-add">+ ${cleanText}</span>\n`;
                     }
                     i++;
                 } else if (line.startsWith('-') && !line.startsWith('---')) {
@@ -781,7 +1036,7 @@
                         cleanText = cleanText.replace(/\t/g, ' ').replace(/ +/g, ' ');
                     }
                     if (cleanText.trim().length > 0) {
-                        formattedHtml += `<span class="text-red-400">- ${cleanText}</span>\n`;
+                        formattedHtml += `<span class="diff-del">- ${cleanText}</span>\n`;
                     }
                     i++;
                 } else {
@@ -791,13 +1046,13 @@
             }
 
             preElement.innerHTML = formattedHtml;
-            diffContainer.classList.remove('hidden');
+            diffContainer.classList.remove('ai-editor-hidden');
             diffContainer.dataset.loaded = 'true';
 
         } catch (error) {
             console.error('Diff Error:', error);
             preElement.textContent = `Error loading diff: ${error.message}`;
-            diffContainer.classList.remove('hidden');
+            diffContainer.classList.remove('ai-editor-hidden');
         } finally {
             diffLink.innerHTML = 'changes';
         }
@@ -839,17 +1094,14 @@
     function hideUploadsModal() {
         const modal = document.getElementById('ai-editor-uploads-modal');
         if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
+            modal.classList.add('ai-editor-hidden');
         }
     }
 
     async function showUploadsModal() {
         const modal = document.getElementById('ai-editor-uploads-modal');
         if (!modal) return;
-
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.classList.remove('ai-editor-hidden');
         await refreshUploadsList();
     }
 
@@ -870,30 +1122,30 @@
                  }
                  return items.map(item => {
                     const thumbnail = type === 'image'
-                        ? `<div class="relative group flex-shrink-0 mr-3">
-                               <img src="/${item.path}" alt="Preview" class="absolute bottom-0 left-12 w-[200px] h-auto bg-stone-900 border border-stone-600 rounded-lg shadow-lg p-1 hidden group-hover:block z-10">
+                        ? `<div class="item-thumbnail">
+                               <img src="/${item.path}" alt="Preview" class="preview-popup">
                            </div>`
-                        : `<div class="w-10 h-10 flex items-center justify-center bg-stone-700 rounded-md mr-3 flex-shrink-0"><i class="fa-solid fa-file-lines text-stone-400"></i></div>`;
+                        : `<div class="item-thumbnail"><div class="doc-icon"><i class="fa-solid fa-file-lines"></i></div></div>`;
  
                      return `
-                     <div class="bg-stone-900/75 p-2 rounded-md flex items-start justify-between text-xs" data-filename="${item.filename}" data-type="${type}">
-                         <div class="flex items-start flex-grow">
+                     <div class="upload-list-item" data-filename="${item.filename}" data-type="${type}">
+                         <div class="item-details">
                              ${thumbnail}
-                             <div class="flex-grow">
-                                 <div class="font-semibold text-stone-200">${item.filename}</div>
+                             <div class="item-info">
+                                 <div class="item-filename">${item.filename}</div>
                                  <div class="description-view text-stone-400">${item.description}</div>
-                                 <div class="description-edit hidden">
-                                 <input type="text" value="${item.description}" class="w-full bg-stone-800 border border-stone-600 rounded px-2 py-1 text-xs text-white focus:outline-none focus:ring-1 focus:ring-rotary-gold">
-                                     <div class="mt-1.5 space-x-2">
-                                     <button class="save-desc-btn text-rotary-gold hover:underline">Save</button>
-                                         <button class="cancel-desc-btn text-stone-400 hover:underline">Cancel</button>
+                                 <div class="description-edit">
+                                     <input type="text" value="${item.description}">
+                                     <div class="desc-actions">
+                                         <button class="save-desc-btn">Save</button>
+                                         <button class="cancel-desc-btn">Cancel</button>
                                      </div>
                                  </div>
                              </div>
                          </div>
-                         <div class="flex-shrink-0 ml-2 space-x-1">
-                            <button class="edit-desc-btn text-stone-400 hover:text-white px-2 py-1"><i class="fa-solid fa-pencil"></i></button>
-                            <button class="delete-upload-btn text-red-500 hover:text-red-400 px-2 py-1"><i class="fa-solid fa-trash-can"></i></button>
+                         <div class="item-actions">
+                            <button class="edit-desc-btn" title="Edit description"><i class="fa-solid fa-pencil"></i></button>
+                            <button class="delete-upload-btn" title="Delete file"><i class="fa-solid fa-trash-can"></i></button>
                          </div>
                      </div>
                  `}).join('');
@@ -913,11 +1165,11 @@
 
         // For now, only handle the first file if multiple are selected/dropped
         const file = files[0];
-        previewContainer.innerHTML = `
-            <div class="p-2 bg-stone-700 rounded-md text-xs text-white flex items-center gap-2">
+        previewContainer.innerHTML = ` 
+            <div class="preview-item">
                 <i class="fa-solid fa-file"></i>
-                <span class="font-semibold">${file.name}</span>
-                <span class="text-stone-400">(${(file.size / 1024).toFixed(1)} KB)</span>
+                <span class="file-name">${file.name}</span>
+                <span class="file-size">(${(file.size / 1024).toFixed(1)} KB)</span>
             </div>
         `;
         // Store the file object for submission
@@ -943,7 +1195,7 @@
 
         submitBtn.disabled = true;
         btnText.textContent = 'Uploading...';
-        spinner.classList.remove('hidden');
+        spinner.classList.remove('ai-editor-hidden');
 
         const formData = new FormData();
         formData.append('file', file);
@@ -969,7 +1221,7 @@
         } finally {
             submitBtn.disabled = false;
             btnText.textContent = 'Upload';
-            spinner.classList.add('hidden');
+            spinner.classList.add('ai-editor-hidden');
         }
     }
 
@@ -977,7 +1229,7 @@
         const deleteBtn = e.target.closest('.delete-upload-btn');
         if (!deleteBtn) return;
 
-        const { filename, type } = deleteBtn.dataset;
+        const { filename, type } = deleteBtn.closest('[data-filename]').dataset;
         if (!filename || !type) return;
 
         if (!confirm(`Are you sure you want to delete "${filename}"? This cannot be undone.`)) {
@@ -1010,21 +1262,21 @@
         const itemElement = e.target.closest('[data-filename]');
         if (!itemElement) return;
 
-        const viewMode = itemElement.querySelector('.description-view');
-        const editMode = itemElement.querySelector('.description-edit');
-        const editBtnEl = itemElement.querySelector('.edit-desc-btn');
+        const viewMode = itemElement.querySelector('.description-view'); 
+        const editMode = itemElement.querySelector('.description-edit'); 
+        const editBtnEl = itemElement.querySelector('.edit-desc-btn'); 
 
         if (editBtn) {
-            viewMode.classList.add('hidden');
-            editMode.classList.remove('hidden');
-            editBtnEl.classList.add('hidden');
+            viewMode.style.display = 'none';
+            editMode.style.display = 'block';
+            editBtnEl.style.display = 'none';
             editMode.querySelector('input').focus();
         }
 
         if (cancelBtn) {
-            viewMode.classList.remove('hidden');
-            editMode.classList.add('hidden');
-            editBtnEl.classList.remove('hidden');
+            viewMode.style.display = 'block';
+            editMode.style.display = 'none';
+            editBtnEl.style.display = 'inline-block';
             // Reset input to original value
             editMode.querySelector('input').value = viewMode.textContent;
         }
@@ -1050,9 +1302,9 @@
 
                 showToast('Success', result.message, true);
                 viewMode.textContent = newDescription; // Update view
-                viewMode.classList.remove('hidden');
-                editMode.classList.add('hidden');
-                editBtnEl.classList.remove('hidden');
+                viewMode.style.display = 'block';
+                editMode.style.display = 'none';
+                editBtnEl.style.display = 'inline-block';
 
             } catch (error) {
                 showToast('Save Error', error.message, false);
@@ -1133,19 +1385,15 @@
         if (dropzone && fileInput && browseBtn) {
             browseBtn.addEventListener('click', () => fileInput.click());
             fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files));
-
+ 
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 dropzone.addEventListener(eventName, (e) => {
                     e.preventDefault();
                     e.stopPropagation();
                 }, false);
             });
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropzone.addEventListener(eventName, () => dropzone.classList.add('border-brandGreen-500', 'bg-stone-700/50'), false);
-            });
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropzone.addEventListener(eventName, () => dropzone.classList.remove('border-brandGreen-500', 'bg-stone-700/50'), false);
-            });
+            ['dragenter', 'dragover'].forEach(eventName => { dropzone.addEventListener(eventName, () => dropzone.classList.add('drag-over'), false); });
+            ['dragleave', 'drop'].forEach(eventName => { dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'), false); });
             dropzone.addEventListener('drop', (e) => handleFileSelect(e.dataTransfer.files), false);
         }
 
@@ -1173,10 +1421,41 @@
     }
 
     function showToggleButton() {
+        // These styles are injected separately so the toggle button is visible
+        // before the main editor HTML (and its styles) are loaded on first click.
+        const toggleButtonStyles = `
+            <style>
+                #ai-editor-toggle {
+                    position: fixed;
+                    top: 0.5rem; right: 0.5rem;
+                    background-color: #3b82f6; /* --c-accent-blue */
+                    color: white;
+                    width: 2.5rem; height: 2.5rem;
+                    border-radius: 9999px;
+                    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1); /* --c-shadow */
+                    z-index: 100000;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: none;
+                    cursor: pointer;
+                    transition: all 0.2s ease;
+                }
+                #ai-editor-toggle:hover {
+                    background-color: #2563eb; /* --c-accent-blue-hover */
+                    transform: scale(1.1);
+                }
+                #ai-editor-toggle.editor-visible {
+                    opacity: 0;
+                    pointer-events: none;
+                }
+            </style>
+        `;
         const toggleButtonHTML = `
-            <button id="ai-editor-toggle" class="fixed top-2 right-2 bg-rotary-blue text-white w-10 h-10 rounded-full shadow-lg z-[99] flex items-center justify-center hover:bg-rotary-royal transition-all transform hover:scale-110">
+            <button id="ai-editor-toggle" title="Toggle AI Editor">
                 <i class="fa-solid fa-robot"></i>
             </button>`;
+        document.head.insertAdjacentHTML('beforeend', toggleButtonStyles);
         document.body.insertAdjacentHTML('beforeend', toggleButtonHTML);
         document.getElementById('ai-editor-toggle')?.addEventListener('click', handleToggleClick);
     }
@@ -1187,21 +1466,10 @@
         } else {
             // Check login status now, when the user wants to open the editor for the first time.
             try {
-                const response = await fetch('/webrobot.php?action=check_login_status', {
+                // The webrobotFetch function will handle the redirect if the session is expired.
+                const result = await webrobotFetch('/webrobot.php?action=check_login_status', {
                     method: 'POST'
                 });
-                const result = await response.json();
-
-                if (!response.ok) {
-                    // This can happen if the server returns 500, etc.
-                    throw new Error(result.error || 'Login check failed.');
-                }
-
-                if (result.status === 'redirect' && result.redirect_url) {
-                    // The backend says we need to log in. Redirect to the provided URL.
-                    window.location.href = result.redirect_url;
-                    return; // Stop execution
-                }
 
                 if (result.status === 'success') {
                     // Login was successful, now initialize the full editor UI.
@@ -1213,10 +1481,12 @@
                 }
             } catch (error) {
                 console.error('AI Editor: Failed to check login status. Editor will not load.', error);
-                showToast('Editor Error', 'Could not verify login status: ' + error.message, false);
+                // The toast UI is not available yet, so we alert.
+                alert('Editor Error: Could not verify login status. ' + error.message);
             }
         }
     }
 
     checkAndInitEditor();
+
 })();
