@@ -7,3 +7,5 @@ bin
 archive
 .git_webfiles
 pages
+etc/webrobot_config.json
+etc/website.conf

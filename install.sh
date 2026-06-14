@@ -11,7 +11,7 @@ echo "This script will create configuration files from .template files."
 echo
 
 # --- Dependency Check ---
-for cmd in find grep sort uniq sed; do
+for cmd in find grep sort uniq sed curl jq; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: Required command '$cmd' is not installed. Please install it and try again." >&2
         exit 1
@@ -37,11 +37,11 @@ declare -A VAR_VALUES
 function get_prompt_text() {
     case "$1" in
         DOMAIN) echo "Domain Name (e.g., acms.cweb.com.au)" ;;
-        BASE_PATH) echo "Absolute base path for website files (e.g., /home/www/acms.cweb.com.au)" ;;
-        HTPASSWD_PATH) echo "Absolute path to .htpasswd file (e.g., /home/ec2-user/etc/htpasswd)" ;;
-        GEMINI_API_KEY) echo "Google Gemini API Key" ;;
+        BASE_PATH) echo "Absolute base path for website files" ;;
+        HTPASSWD_PATH) echo "Absolute path to .htpasswd file" ;;
+        GEMINI_API_KEY) echo "Google Gemini API Key (get from https://aistudio.google.com/api-keys)" ;;
         GEMINI_MODEL) echo "Gemini Model to use (e.g., gemini-1.5-flash-latest)" ;;
-        LOG_PATH) echo "Absolute path for WebRobot log directory (e.g., /home/ec2-user/acms.cweb.com.au/var/log/gemini)" ;;
+        LOG_PATH) echo "Absolute path for WebRobot log directory" ;;
         *) echo "$1" ;; # Fallback to the variable name itself if not defined above.
     esac
 }
@@ -68,9 +68,16 @@ for TPL_FILE in $TEMPLATE_FILES; do
             VALUE=""
             if [[ "$OUTPUT_FILE" == *.conf ]]; then
                 # Handle Apache .conf files
-                # Generic handling for 'Define' variables. This now works for BASE_PATH as well.
-                LINE=$(grep "^Define ${CLEAN_VAR_NAME}" "$OUTPUT_FILE" || true)
-                VALUE=$(echo "$LINE" | awk '{print $3}')
+                if [[ "$CLEAN_VAR_NAME" == "BASE_PATH" ]]; then
+                    # Special case: The placeholder %BASE_PATH% is used to define the Apache variable BASE_DIR.
+                    # We need to read the value from the 'Define BASE_DIR' line.
+                    LINE=$(grep "^Define BASE_DIR" "$OUTPUT_FILE" || true)
+                    VALUE=$(echo "$LINE" | awk '{print $3}')
+                else
+                    # Generic handling for other 'Define' variables where placeholder name matches the Apache variable name.
+                    LINE=$(grep "^Define ${CLEAN_VAR_NAME}" "$OUTPUT_FILE" || true)
+                    VALUE=$(echo "$LINE" | awk '{print $3}')
+                fi
             elif [[ "$OUTPUT_FILE" == *.json ]]; then
                 # Handle .json files by mapping variable name to JSON key
                 JSON_KEY=""
@@ -109,6 +116,63 @@ for VAR in $VARIABLES; do
     VAR_VALUES[$CLEAN_VAR_NAME]=$USER_INPUT
 done
 echo
+
+# --- API Key Validation ---
+if [[ -n "${VAR_VALUES[GEMINI_API_KEY]:-}" ]]; then
+    while true; do
+        echo "Testing Gemini API Key..."
+        API_KEY_TO_TEST="${VAR_VALUES[GEMINI_API_KEY]}"
+        MODEL_TO_TEST="${VAR_VALUES[GEMINI_MODEL]}"
+
+        # The 'list models' endpoint can sometimes fail with valid keys due to specific permissions,
+        # giving a misleading 401 error.
+        # A more robust test is to use the 'countTokens' endpoint with the selected model.
+        # This confirms the key is valid AND has access to the requested model.
+        # We use -s for silent, -f to fail on server errors (like 4xx), and check the exit code.
+        # We capture the response body and HTTP status code to provide detailed error feedback.
+        RESPONSE_BODY=$(mktemp)
+        # The countTokens endpoint returns 200 on success.
+        # We use -o to write the body to a file, and -w to write the HTTP code to stdout.
+        HTTP_CODE=$(curl -s -o "$RESPONSE_BODY" -w "%{http_code}" -X POST "https://generativelanguage.googleapis.com/v1beta/models/${MODEL_TO_TEST}:countTokens?key=${API_KEY_TO_TEST}" \
+            -H "Content-Type: application/json" \
+            -d '{"contents":[{"parts":[{"text":"validation"}]}]}')
+
+        if [[ "$HTTP_CODE" -eq 200 ]]; then
+            rm "$RESPONSE_BODY"
+            echo "API Key validation successful."
+            echo
+            break
+        else
+            echo "Error: The provided Gemini API Key appears to be invalid or lacks access to the model '${MODEL_TO_TEST}'."
+            echo "API Response (HTTP ${HTTP_CODE}):"
+            # Try to pretty-print if jq is available, otherwise just cat.
+            if command -v jq &> /dev/null; then
+                jq . "$RESPONSE_BODY"
+            else
+                cat "$RESPONSE_BODY"
+            fi
+            rm "$RESPONSE_BODY"
+            echo
+            read -p "Would you like to (r)e-enter the key, (i)gnore the error, or (a)bort? [r/i/a]: " choice
+            echo
+            case "$choice" in
+                r|R)
+                    read -p "- Google Gemini API Key (get from https://aistudio.google.com/api-keys): " NEW_API_KEY
+                    VAR_VALUES[GEMINI_API_KEY]=$NEW_API_KEY
+                    ;;
+                i|I)
+                    echo "Warning: Continuing with a potentially invalid API key."
+                    echo
+                    break
+                    ;;
+                a|A|*)
+                    echo "Aborting installation."
+                    exit 1
+                    ;;
+            esac
+        fi
+    done
+fi
 
 # --- File Generation ---
 for TPL_FILE in $TEMPLATE_FILES; do
