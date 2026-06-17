@@ -72,8 +72,8 @@ class WebRobotMailer_ACMSMailer implements WebRobotMailer {
     public function sendContactForm($name, $from_email, $subject, $message) {
         // The 'to' address should be configured securely, not hardcoded if possible.
         // For this example, we'll use a placeholder.
-        // 'contact@acms-australia.org'
-        $to = 'pwillia6@gmail.com'; 
+        $to = 'contact@acms-australia.org';
+        //$to = 'pwillia6@gmail.com'; 
         $full_subject = "ACMS Contact Form: " . $subject;
         
         $body = "You have received a new message from your website contact form.\\n\\n";

@@ -1,6 +1,8 @@
 <?php
 // PHP Compatibility: 5.6+
 
+require "LoginCheckerInterface.php";
+
 // The root directory of the website you want to edit.
 define('DOC_ROOT', __DIR__ . '/../pages');
 // Define to true to simulate a patch command failure for testing purposes.
