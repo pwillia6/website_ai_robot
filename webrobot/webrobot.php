@@ -142,6 +142,9 @@ class GeminiService {
                 'model' => $this->model,
                 'system_instruction' => $system_prompt,
                 'input' => $input_parts,
+                "generation_config" => [
+                    "thinking_summaries" => "auto" // Crucial: Tells the model to emit human-readable summaries
+                ],    
                 'response_format' => [
                     'type' => 'text',
                     'mime_type' => 'application/json',
@@ -189,11 +192,15 @@ class GeminiService {
             $newInteractionId = isset($result['id']) ? $result['id'] : null;
 
             $modified_files_json = null;
+            $summary = null;
             if (isset($result['steps']) && is_array($result['steps'])) {
                 foreach ($result['steps'] as $step) {
                     if (isset($step['type']) && $step['type'] === 'model_output' && isset($step['content'][0]['text'])) {
                         $modified_files_json = $step['content'][0]['text'];
-                        break;
+                    }
+                    // Capture the first thought summary
+                    if ($summary === null && isset($step['type']) && $step['type'] === 'thought' && isset($step['summary'][0]['text'])) {
+                        $summary = $step['summary'][0]['text'];
                     }
                 }
             }
@@ -223,6 +230,7 @@ class GeminiService {
                     'modified_files' => $modified_files_data['modified_files'],
                     'interaction_id' => $newInteractionId,
                     'usage' => $final_usage,
+                    'summary' => $summary,
                 );
             } elseif (isset($result['promptFeedback']['blockReason'])) {
                 throw new Exception('API request was blocked. Reason: ' . $result['promptFeedback']['blockReason']);
@@ -762,6 +770,7 @@ class WebRobotUpdater {
             'message' => "$updated_files_count file(s) updated successfully by AI.",
             'usage' => $geminiResult['usage'],
             'interaction_id' => $geminiResult['interaction_id'],
+            'summary' => isset($geminiResult['summary']) ? $geminiResult['summary'] : null,
         ];
     }
 
@@ -1212,6 +1221,7 @@ try {
             $response['message'] = $result['message'];
             $response['interaction_id'] = $result['interaction_id'];
             $response['usage'] = $result['usage'];
+            $response['summary'] = isset($result['summary']) ? $result['summary'] : null;
             break;
         case 'check_login_status':
             $fullLoginCheckerClass = '\\WebRobot\\' . $loginCheckerClass;

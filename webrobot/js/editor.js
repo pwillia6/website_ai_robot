@@ -732,6 +732,11 @@
                 body: JSON.stringify(payload)
             });
 
+            // If the AI provided a summary of its thought process, store it in a cookie for the next page load.
+            if (result.summary) {
+                setSessionCookie('ai_editor_summary', encodeURIComponent(result.summary), 1); // Store for 1 day, URI encoded.
+            }
+
             // Always manage the cookie to maintain conversational context.
             if (result.interaction_id) {
                 setSessionCookie(cookieName, result.interaction_id, 1); // Set for 1 day
@@ -1401,6 +1406,127 @@
         isEditorInitialized = true;
     }
 
+    /**
+     * Checks for a summary from the previous AI action stored in a cookie
+     * and displays it in a temporary, self-contained toast notification.
+     * This is designed to run on page load, before the main editor UI is necessarily initialized.
+     */
+    function showSummaryToastOnLoad() {
+        const summaryCookie = getCookie('ai_editor_summary');
+        if (!summaryCookie) return;
+
+        // Delete cookie so it only shows once
+        setSessionCookie('ai_editor_summary', '', -1); 
+        const summary = decodeURIComponent(summaryCookie);
+
+        // Create toast elements
+        const toast = document.createElement('div');
+        const iconContainer = document.createElement('div');
+        const contentContainer = document.createElement('div');
+        const title = document.createElement('strong');
+        const body = document.createElement('div');
+        const closeButton = document.createElement('button');
+
+        // Add padding to the main content area to make space for the close button
+        Object.assign(contentContainer.style, {
+            paddingRight: '1.5rem'
+        });
+
+        // Apply styles directly to be self-contained
+        Object.assign(toast.style, {
+            position: 'fixed',
+            bottom: '1.5rem',
+            right: '1.5rem',
+            backgroundColor: '#262626',
+            color: '#f5f5f5',
+            padding: '1rem 1.25rem',
+            borderRadius: '0.75rem',
+            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.2), 0 4px 6px -2px rgba(0,0,0,0.1)',
+            maxWidth: '32rem',
+            zIndex: '100003',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.75rem',
+            transition: 'opacity 0.3s ease, transform 0.3s ease',
+            opacity: '0',
+            transform: 'translateY(20px)',
+            fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+            fontSize: '11px',
+            lineHeight: '1.5'
+        });
+
+        Object.assign(iconContainer.style, {
+            padding: '0.375rem',
+            borderRadius: '0.5rem',
+            fontSize: '14px',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            backgroundColor: 'rgba(59, 130, 246, 0.2)',
+            color: '#3b82f6', // --c-accent-blue
+            flexShrink: '0',
+            marginTop: '4px'
+        });
+        iconContainer.innerHTML = '<i class="fa-solid fa-brain"></i>';
+
+        title.textContent = "AI's Thought Process";
+        Object.assign(title.style, {
+            fontWeight: '700',
+            fontSize: '12px',
+            display: 'block',
+            color: '#f5f5f5'
+        });
+
+        // Basic markdown to HTML conversion
+        let htmlSummary = summary
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/`(.*?)`/g, '<code style="background-color: #404040; padding: 1px 4px; border-radius: 4px; font-family: monospace; font-size: 10px;">$1</code>')
+            .replace(/\n/g, '<br>');
+        body.innerHTML = htmlSummary;
+        Object.assign(body.style, {
+            color: '#a3a3a3',
+            marginTop: '0.25rem',
+            maxHeight: '250px',
+            overflowY: 'auto',
+            paddingRight: '8px'
+        });
+
+        // Style and add the close button
+        Object.assign(closeButton.style, {
+            position: 'absolute',
+            top: '0.25rem',
+            right: '0.5rem',
+            background: 'transparent',
+            border: 'none',
+            color: '#a3a3a3', // --c-text-muted
+            fontSize: '1.5rem',
+            lineHeight: '1',
+            cursor: 'pointer',
+            padding: '0.25rem',
+        });
+        closeButton.innerHTML = '&times;';
+        const closeHandler = () => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(20px)';
+            setTimeout(() => toast.remove(), 300);
+        };
+        closeButton.addEventListener('click', closeHandler);
+
+        // Assemble and append
+        contentContainer.appendChild(title);
+        contentContainer.appendChild(body);
+        toast.appendChild(iconContainer);
+        toast.appendChild(contentContainer);
+        toast.appendChild(closeButton);
+        document.body.appendChild(toast);
+
+        // Animate in
+        setTimeout(() => {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 100);
+
+        // The toast is now persistent and must be closed manually.
+    }
+
     // --- Initialization Logic ---
     function checkAndInitEditor() {
         const hasRobotHash = window.location.hash === '#robot';
@@ -1415,9 +1541,10 @@
         // If we reach here, show the toggle button.
         // The actual editor initialization and login check will happen when the user clicks it.
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', showToggleButton);
+            document.addEventListener('DOMContentLoaded', () => { showToggleButton(); showSummaryToastOnLoad(); });
         } else {
             showToggleButton();
+            showSummaryToastOnLoad();
         }
     }
 
