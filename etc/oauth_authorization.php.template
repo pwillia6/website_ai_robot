@@ -1,0 +1,13 @@
+<?php
+/**
+ * Checks if a given email address is authorized to web robot
+ *
+ * @param string $email The email address to check.
+ * @return bool True if authorized, false otherwise.
+ */
+function isAuthorized($email) {
+    $email = strtolower($email);
+
+    // Code to check if email is allowed to login
+}
+

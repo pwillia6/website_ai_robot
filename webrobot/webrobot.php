@@ -1,6 +1,8 @@
 <?php
 // PHP Compatibility: 5.6+
 
+require "LoginCheckerInterface.php";
+
 // The root directory of the website you want to edit.
 define('DOC_ROOT', __DIR__ . '/../pages');
 // Define to true to simulate a patch command failure for testing purposes.
@@ -616,6 +618,8 @@ class WebRobotUpdater {
     private $geminiService;
     /** @var GitService|null The service for Git version control. */
     private $gitService;
+    /** @var \WebRobot\WebRobotMailer The service used for sending emails. */
+    private $mailer;
 
     /**
      * WebRobotUpdater constructor.
@@ -631,6 +635,45 @@ class WebRobotUpdater {
             error_log("GitService initialization failed: " . $e->getMessage());
             $this->gitService = null;
         }
+
+        // --- Mailer logic ---
+        // The mailer is only needed for specific actions, but we instantiate it here
+        // to ensure it's available if needed.
+        $mailerClass = isset($configData['mailer_class']) && !empty($configData['mailer_class']) 
+            ? $configData['mailer_class'] 
+            : 'WebRobotMailer_Default';
+        
+        $mailerFile = __DIR__ . '/' . $mailerClass . '.php';
+
+        // The mailer interface should always be available.
+        $interfaceFile = __DIR__ . '/WebRobotMailer.php';
+        if (!file_exists($interfaceFile)) {
+            // This would be a fatal error for setup.
+            throw new Exception("Mailer interface file not found: {$interfaceFile}");
+        }
+        require_once $interfaceFile;
+
+        if (!file_exists($mailerFile)) {
+            error_log("Configured mailer class file not found: {$mailerFile}. Falling back to default.");
+            $mailerClass = 'WebRobotMailer_Default';
+            $mailerFile = __DIR__ . '/WebRobotMailer_Default.php';
+        }
+        
+        if (!file_exists($mailerFile)) {
+            // If default also doesn't exist, we have a problem.
+            throw new Exception("Default mailer class file not found: {$mailerFile}");
+        }
+
+        require_once $mailerFile;
+
+        $fullMailerClass = '\\WebRobot\\' . $mailerClass;
+        if (!class_exists($fullMailerClass)) {
+            throw new Exception("Mailer class '{$fullMailerClass}' does not exist.");
+        }
+        if (!in_array('WebRobot\\WebRobotMailer', class_implements($fullMailerClass))) {
+            throw new Exception("Mailer class '{$mailerClass}' does not implement WebRobotMailer interface.");
+        }
+        $this->mailer = new $fullMailerClass($configData);
     }
 
     /** @return GitService|null */
@@ -773,6 +816,15 @@ class WebRobotUpdater {
             'summary' => isset($geminiResult['summary']) ? $geminiResult['summary'] : null,
         ];
     }
+
+    public function sendContactEmail($name, $from_email, $subject, $message) {
+        // This method now acts as a simple proxy to the mailer service.
+        // All logic for constructing and sending the email is in the mailer class.
+        if (!$this->mailer->sendContactForm($name, $from_email, $subject, $message)) {
+            throw new Exception('The mailer failed to send the email.');
+        }
+    }
+
 
     /**
      * Lists all uploaded files by reading the metadata JSON.
@@ -1189,9 +1241,9 @@ $action = isset($_GET['action']) ? $_GET['action'] : '';
 $response = array();
 
 // --- New Login Guard ---
-// The 'check_login_status' action is the only one that can be called without being logged in.
+// The 'check_login_status' and 'send_contact_email' actions can be called without being logged in.
 // All other actions require an active, authorized session.
-if ($action !== 'check_login_status') {
+if ($action !== 'check_login_status' && $action !== 'send_contact_email') {
     $fullLoginCheckerClass = '\\WebRobot\\' . $loginCheckerClass;
     $loginChecker = new $fullLoginCheckerClass($configData);
     $loginStatus = $loginChecker->isLoggedIn();
@@ -1222,6 +1274,20 @@ try {
             $response['interaction_id'] = $result['interaction_id'];
             $response['usage'] = $result['usage'];
             $response['summary'] = isset($result['summary']) ? $result['summary'] : null;
+            break;
+        case 'send_contact_email':
+            $data = json_decode(file_get_contents('php://input'), true);
+            $name = isset($data['name']) ? trim($data['name']) : '';
+            $email = isset($data['email']) ? trim($data['email']) : '';
+            $subject = isset($data['subject']) ? trim($data['subject']) : '';
+            $message = isset($data['message']) ? trim($data['message']) : '';
+
+            if (empty($name) || empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL) || empty($subject) || empty($message)) {
+                throw new Exception('All fields are required and a valid email must be provided.');
+            }
+
+            $updater->sendContactEmail($name, $email, $subject, $message);
+            $response['message'] = 'Thank you for your message! We will get back to you shortly.';
             break;
         case 'check_login_status':
             $fullLoginCheckerClass = '\\WebRobot\\' . $loginCheckerClass;

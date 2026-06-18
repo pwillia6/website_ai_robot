@@ -11,12 +11,25 @@ echo "This script will create configuration files from .template files."
 echo
 
 # --- Dependency Check ---
-for cmd in find grep sort uniq sed curl jq git; do
+for cmd in find grep sort uniq sed curl jq git composer; do
     if ! command -v $cmd &> /dev/null; then
         echo "Error: Required command '$cmd' is not installed. Please install it and try again." >&2
         exit 1
     fi
 done
+
+# --- Composer Dependencies ---
+# The ACMS Mailer uses PHPMailer which is installed via Composer.
+if [ -f "../composer.json" ]; then
+    echo "Installing PHP dependencies with Composer..."
+    # Run composer from the project root directory (one level up from this script)
+    if ! (cd .. && composer install --no-dev --optimize-autoloader); then
+        echo "Error: Composer install failed. Please check your composer.json and run 'composer install' manually from the project root." >&2
+        exit 1
+    fi
+    echo "Composer dependencies installed successfully."
+    echo
+fi
 
 # --- Variable Discovery ---
 # Find all template files in the etc/ directory.
