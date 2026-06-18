@@ -21,8 +21,19 @@ if ($provider) {
 $oauth = \WebRobot\OAuth::initialize($_SERVER['PHP_SELF']);
 
 if ($oauth === false) {
-    // User is not logged in and has not chosen a provider.
-    // Display the login choice page.
+    // User is not logged in and has not chosen a provider. Check configured providers.
+    $configuredProviders = \WebRobot\OAuth::getConfiguredProviders();
+
+    if (count($configuredProviders) === 1) {
+        // Only one provider is configured, so redirect to it automatically.
+        $singleProvider = $configuredProviders[0];
+        \WebRobot\OAuth::setProvider($singleProvider);
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
+    // If 0 or more than 1 providers are configured, display the choice page.
+    // The buttons will be shown dynamically based on the configuration.
     ?>
     <!DOCTYPE html>
     <html lang="en">
@@ -83,8 +94,15 @@ if ($oauth === false) {
         <div class="login-container">
             <h1 class="app-title">Webrobot Login</h1>
             <h2>&nbsp;</h2>
-            <a href="?provider=google" class="login-button google">Sign in with Google</a>
-            <!-- <a href="?provider=microsoft" class="login-button microsoft">Sign in with Microsoft</a> -->
+            <?php if (in_array('google', $configuredProviders)): ?>
+                <a href="?provider=google" class="login-button google">Sign in with Google</a>
+            <?php endif; ?>
+            <?php if (in_array('microsoft', $configuredProviders)): ?>
+                <a href="?provider=microsoft" class="login-button microsoft">Sign in with Microsoft</a>
+            <?php endif; ?>
+            <?php if (empty($configuredProviders)): ?>
+                <p>No login providers are configured.</p>
+            <?php endif; ?>
         </div>
     </body>
     </html>

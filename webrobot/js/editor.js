@@ -472,10 +472,18 @@
             elementsToEdit[0].focus();
         } else { // Switching back to AI mode
             const wasInTextMode = elementsToEdit.some(el => el.isContentEditable);
-            if (wasInTextMode && !confirm('Are you sure you want to cancel? All changes will be lost.')) {
-                modeToggle.checked = true; // Revert toggle if user cancels
+            if (wasInTextMode) {
+                if (confirm('Are you sure you want to cancel? All changes will be lost.')) {
+                    // Reload the page to discard changes and restore original content.
+                    window.location.reload();
+                } else {
+                    // User cancelled, so revert the toggle switch to stay in Text mode.
+                    modeToggle.checked = true;
+                }
                 return;
             }
+
+            // Fallback for UI consistency if we somehow get here without being in text mode.
             if (aiEditorControls) aiEditorControls.classList.remove('ai-editor-hidden');
             if (textEditorControls) textEditorControls.classList.add('ai-editor-hidden');
 

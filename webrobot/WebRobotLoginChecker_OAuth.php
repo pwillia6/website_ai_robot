@@ -17,6 +17,36 @@ class OAuth {
     }
 
     /**
+     * Returns a list of configured OAuth providers.
+     * @return array A list of provider names (e.g., ['google', 'microsoft']).
+     */
+    static function getConfiguredProviders() {
+        $providers = [];
+        $configFile = __DIR__ . '/../etc/oauth_credentials.json';
+        if (!file_exists($configFile)) {
+            // If the file doesn't exist, no providers are configured.
+            error_log("OAuth credentials file not found for getConfiguredProviders: {$configFile}");
+            return $providers;
+        }
+
+        $configData = json_decode(file_get_contents($configFile), true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // If JSON is invalid, treat as no providers configured.
+            error_log("Error decoding JSON from oauth_credentials.json for getConfiguredProviders: " . json_last_error_msg());
+            return $providers;
+        }
+
+        if (isset($configData['google']) && !empty($configData['google']['client_id'])) {
+            $providers[] = 'google';
+        }
+        if (isset($configData['microsoft']) && !empty($configData['microsoft']['client_id'])) {
+            $providers[] = 'microsoft';
+        }
+
+        return $providers;
+    }
+
+    /**
      * Initializes and returns the OAuth object from the session.
      * If no provider is set in the session, it returns false.
      * @param string $returnURL The URL to return to after authentication.
