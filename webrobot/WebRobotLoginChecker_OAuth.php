@@ -13,7 +13,7 @@ class OAuth {
      * @param string $provider The name of the provider (e.g., 'google', 'microsoft').
      */
     static function setProvider($provider) {
-        $_SESSION['oauth_provider'] = $provider;
+        $_SESSION['WebRobot::oauth_provider'] = $provider;
     }
 
     /**
@@ -53,11 +53,11 @@ class OAuth {
      * @return OAuth|false The OAuth object or false if initialization fails.
      */
     static function initialize($returnURL) {
-        if (isset($_SESSION["OAuth"])) {
-            return $_SESSION["OAuth"];
+        if (isset($_SESSION["WebRobot::OAuth"])) {
+            return $_SESSION["WebRobot::OAuth"];
         }
 
-        if (!isset($_SESSION['oauth_provider'])) {
+        if (!isset($_SESSION['WebRobot::oauth_provider'])) {
             return false;
         }
 
@@ -73,7 +73,7 @@ class OAuth {
             return false;
         }
 
-        $provider = $_SESSION['oauth_provider'];
+        $provider = $_SESSION['WebRobot::oauth_provider'];
         $redirectUri = 'https://' . $_SERVER['HTTP_HOST'] . "/login.php";
 
         if ($provider === 'microsoft') {
@@ -101,13 +101,13 @@ class OAuth {
                 $redirectUri, 
                 $returnURL);
         }
-        $_SESSION["OAuth"] = $oauth;
+        $_SESSION["WebRobot::OAuth"] = $oauth;
 
-        return $_SESSION["OAuth"];
+        return $_SESSION["WebRobot::OAuth"];
     }
     
     static function reset() {
-        unset($_SESSION["OAuth"]);
+        unset($_SESSION["WebRobot::OAuth"]);
     }
     
     function __construct($Type, $ClientID, $ClientSecret, $RedirectURL, $ReturnURL, $options = array()) {
@@ -498,10 +498,10 @@ class WebRobotLoginChecker_OAuth implements LoginCheckerInterface
             // User is not logged in. Store the page they are on to redirect back after login.
             // The Referer header should contain the URL of the page the user is on.
             if (isset($_SERVER['HTTP_REFERER'])) {
-                $_SESSION['login_redirect'] = $_SERVER['HTTP_REFERER'];
+                $_SESSION['WebRobot::login_redirect'] = $_SERVER['HTTP_REFERER'];
             } else {
                 // Fallback if referer is not available
-                $_SESSION['login_redirect'] = '/';
+                $_SESSION['WebRobot::login_redirect'] = '/';
             }
             return '/login.php';
         }
