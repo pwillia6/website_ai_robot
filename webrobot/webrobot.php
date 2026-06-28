@@ -817,6 +817,65 @@ class WebRobotUpdater {
         ];
     }
 
+    /**
+     * Generates a replacement for a single named section and splices it back into the file.
+     */
+    public function generateAndSaveSection($prompt, $section_id, $section_html, $file_path, $interactionId = null) {
+        if (empty($section_id) || empty($section_html) || empty($file_path)) {
+            throw new Exception('Missing required parameters: section_id, section_html, or file.');
+        }
+
+        $files_for_api = [
+            ['path' => "section-{$section_id}.html", 'content' => $section_html]
+        ];
+
+        $uploadsMetadataPath = $this->getUploadsMetadataPath();
+        if (file_exists($uploadsMetadataPath)) {
+            $files_for_api[] = [
+                'path' => 'upload/uploads.json',
+                'content' => file_get_contents($uploadsMetadataPath)
+            ];
+        }
+
+        $geminiResult = $this->geminiService->call_gemini_api($files_for_api, $prompt, $interactionId, 'full_content');
+
+        if (empty($geminiResult['modified_files']) || !isset($geminiResult['modified_files'][0]['full_content'])) {
+            throw new Exception('AI did not return updated content for the section.');
+        }
+
+        $new_section_html = $geminiResult['modified_files'][0]['full_content'];
+
+        $fullPath = $this->validate_path($file_path);
+        $original_content = file_get_contents($fullPath);
+
+        // Replace the section matching id="section_id" in the file
+        $safe_id = preg_quote($section_id, '/');
+        $pattern = '/<section\b[^>]*\bid="' . $safe_id . '"[^>]*>.*?<\/section>/si';
+
+        // Escape $ and \ in replacement so preg_replace doesn't treat them as backreferences
+        $safe_replacement = str_replace(['\\', '$'], ['\\\\', '\\$'], $new_section_html);
+        $new_content = preg_replace($pattern, $safe_replacement, $original_content, 1, $count);
+
+        if ($count === 0 || $new_content === null) {
+            throw new Exception("Could not find <section id=\"{$section_id}\"> in the file.");
+        }
+
+        if (file_put_contents($fullPath, $new_content) === false) {
+            throw new Exception("Failed to save file after updating section #{$section_id}.");
+        }
+
+        if ($this->gitService) {
+            $this->gitService->commitChanges([$file_path], "[Section #{$section_id}] {$prompt}");
+        }
+
+        return [
+            'message' => "Section #{$section_id} updated successfully.",
+            'usage' => $geminiResult['usage'],
+            'interaction_id' => $geminiResult['interaction_id'],
+            'summary' => isset($geminiResult['summary']) ? $geminiResult['summary'] : null,
+        ];
+    }
+
     public function sendContactEmail($name, $from_email, $subject, $message) {
         // This method now acts as a simple proxy to the mailer service.
         // All logic for constructing and sending the email is in the mailer class.
@@ -868,8 +927,12 @@ class WebRobotUpdater {
 
         $type = null;
         if (in_array($extension, $imageExtensions)) {
-            // Verify that it's a real image file
-            if (@getimagesize($tmp_path) === false) {
+            if ($extension === 'svg') {
+                $svgContent = file_get_contents($tmp_path, false, null, 0, 512);
+                if (stripos($svgContent, '<svg') === false) {
+                    throw new Exception("Uploaded file is not a valid SVG: {$filename}");
+                }
+            } elseif (@getimagesize($tmp_path) === false) {
                 throw new Exception("Uploaded file is not a valid image: {$filename}");
             }
             $type = 'image';
@@ -1262,6 +1325,20 @@ $updater = new WebRobotUpdater($configData);
 // Main action handler.
 try {
     switch ($action) {
+        case 'generate_section':
+            $data = json_decode(file_get_contents('php://input'), true);
+            $prompt = isset($data['prompt']) ? $data['prompt'] : '';
+            $section_id = isset($data['section_id']) ? $data['section_id'] : '';
+            $section_html = isset($data['section_html']) ? $data['section_html'] : '';
+            $file_path = isset($data['file']) ? $data['file'] : '';
+            $interaction_id = isset($data['interaction_id']) ? $data['interaction_id'] : null;
+
+            $result = $updater->generateAndSaveSection($prompt, $section_id, $section_html, $file_path, $interaction_id);
+            $response['message'] = $result['message'];
+            $response['interaction_id'] = $result['interaction_id'];
+            $response['usage'] = $result['usage'];
+            $response['summary'] = isset($result['summary']) ? $result['summary'] : null;
+            break;
         case 'generate_and_save':
             $data = json_decode(file_get_contents('php://input'), true);
             $prompt = isset($data['prompt']) ? $data['prompt'] : '';

@@ -272,6 +272,20 @@
             #ai-editor-toast-icon.error { background-color: rgba(239, 68, 68, 0.2); color: var(--c-accent-red); border-color: rgba(239, 68, 68, 0.3); }
             #ai-editor-toast-title { font-family: var(--font-serif, serif); font-weight: 700; font-size: 12px; display: block; }
             #ai-editor-toast-body { font-size: 11px; line-height: 1.5; color: var(--c-text-muted); }
+
+            /* Section indicator */
+            #ai-section-indicator {
+                font-size: 11px;
+                padding: 0.375rem 0.625rem;
+                border-radius: 0.375rem;
+                border: 1px solid var(--c-border);
+                background: rgba(0,0,0,0.2);
+                display: flex;
+                align-items: center;
+                gap: 0.375rem;
+            }
+            #ai-section-indicator.no-section { border-color: rgba(245,158,11,0.4); color: var(--c-accent-gold); }
+            #ai-section-indicator.has-section { border-color: rgba(34,197,94,0.4); color: var(--c-accent-green); }
         </style>
         <div id="ai-editor-bar">
             
@@ -293,7 +307,10 @@
 
             <!-- AI Controls -->
             <div id="ai-editor-controls" class="editor-controls">
-                <textarea id="ai-editor-prompt" rows="3" placeholder="Enter your edit request... (Cmd/Ctrl + Enter to submit)"></textarea>
+                <div style="display:flex;flex-direction:column;flex-grow:1;gap:0.5rem;">
+                    <div id="ai-section-indicator" class="no-section"><i class="fa-solid fa-circle-info"></i> Use the nav links to navigate to a section, then generate.</div>
+                    <textarea id="ai-editor-prompt" rows="3" placeholder="Enter your edit request for this section... (Cmd/Ctrl + Enter to submit)"></textarea>
+                </div>
                 <div class="btn-group">
                     <button id="ai-editor-generate" class="btn-primary">
                         <span id="ai-editor-btn-text">Generate</span>
@@ -645,8 +662,8 @@
      */
     function getInteractionCookieName() {
         const path = getCurrentFilePath();
-        // Sanitize the path to create a valid cookie name.
-        const safePath = path.replace(/\//g, '_').replace(/\./g, '-');
+        const sectionId = getActiveSectionId() || 'page';
+        const safePath = (path + '_' + sectionId).replace(/\//g, '_').replace(/\./g, '-');
         return 'gemini_interaction_id_' + safePath;
     }
 
@@ -691,7 +708,48 @@
         return path;
     }
 
+    function getActiveSectionId() {
+        var hash = window.location.hash;
+        if (!hash || hash === '#robot') return null;
+        var id = hash.substring(1);
+        var el = document.getElementById(id);
+        if (!el || el.tagName.toLowerCase() !== 'section') return null;
+        return id;
+    }
+
+    function updateGenerateButtonState() {
+        var sectionId = getActiveSectionId();
+        var generateBtn = document.getElementById('ai-editor-generate');
+        var indicator = document.getElementById('ai-section-indicator');
+
+        if (generateBtn) {
+            generateBtn.disabled = !sectionId;
+        }
+
+        if (indicator) {
+            if (sectionId) {
+                indicator.className = 'has-section';
+                indicator.innerHTML = '<i class="fa-solid fa-crosshairs"></i> Editing section: <strong>#' + sectionId + '</strong> — enter a prompt and click Generate.';
+            } else {
+                indicator.className = 'no-section';
+                indicator.innerHTML = '<i class="fa-solid fa-circle-info"></i> Use the nav links to navigate to a section, then generate.';
+            }
+        }
+    }
+
     async function handleGenerate() {
+        const sectionId = getActiveSectionId();
+        if (!sectionId) {
+            showToast('AI Editor', 'Navigate to a section using the nav links before generating.', false);
+            return;
+        }
+
+        const sectionEl = document.getElementById(sectionId);
+        if (!sectionEl) {
+            showToast('AI Editor', 'Section element not found on page.', false);
+            return;
+        }
+
         const promptInput = document.getElementById('ai-editor-prompt');
         const generateBtn = document.getElementById('ai-editor-generate');
         const btnText = document.getElementById('ai-editor-btn-text');
@@ -710,63 +768,42 @@
         spinner.classList.remove('ai-editor-hidden');
 
         try {
-            // Collect scope data
-            const updateAllHtml = document.getElementById('ai-update-all-html')?.checked || false;
-            let filesToUpdate = [];
-            if (updateAllHtml) {
-                // Let the backend figure out all HTML files from sitemap
-            } else {
-                filesToUpdate = Array.from(document.querySelectorAll('.ai-target-file:checked')).map(el => el.value);
-            }
-            // If for some reason nothing is selected, default to current file.
-            if (filesToUpdate.length === 0 && !updateAllHtml) {
-                filesToUpdate.push(getCurrentFilePath());
-            }
-
             const cookieName = getInteractionCookieName();
-            // Always retrieve the interactionId to maintain conversational context.
-            let interactionId = getCookie(cookieName);
+            const interactionId = getCookie(cookieName);
 
             const payload = {
                 prompt: userPrompt,
-                update_all_html: updateAllHtml,
-                target_files: filesToUpdate,
+                section_id: sectionId,
+                section_html: sectionEl.outerHTML,
+                file: getCurrentFilePath(),
                 interaction_id: interactionId
             };
 
-            const result = await webrobotFetch('/webrobot.php?action=generate_and_save', {
+            const result = await webrobotFetch('/webrobot.php?action=generate_section', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
-            // If the AI provided a summary of its thought process, store it in a cookie for the next page load.
             if (result.summary) {
-                setSessionCookie('ai_editor_summary', encodeURIComponent(result.summary), 1); // Store for 1 day, URI encoded.
+                setSessionCookie('ai_editor_summary', encodeURIComponent(result.summary), 1);
             }
 
-            // Always manage the cookie to maintain conversational context.
             if (result.interaction_id) {
-                setSessionCookie(cookieName, result.interaction_id, 1); // Set for 1 day
+                setSessionCookie(cookieName, result.interaction_id, 1);
             } else {
-                // If no ID came back, the conversation is broken or over. Clear the cookie.
                 setSessionCookie(cookieName, '', -1);
             }
 
-            showToast('AI Editor', result.message || 'Update successful! Reloading...', true);
-
-            // Reload the page to see the changes from the server.
-            // A timeout gives the user a moment to see the success toast.
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+            showToast('AI Editor', result.message || 'Section updated! Reloading...', true);
+            setTimeout(() => { window.location.reload(); }, 1500);
 
         } catch (error) {
             console.error('AI Editor Error:', error);
             showToast('AI Editor Error', error.message, false);
-            generateBtn.disabled = false;
             btnText.textContent = 'Generate';
             spinner.classList.add('ai-editor-hidden');
+            updateGenerateButtonState();
         }
     }
 
@@ -1410,6 +1447,9 @@
             ['dragleave', 'drop'].forEach(eventName => { dropzone.addEventListener(eventName, () => dropzone.classList.remove('drag-over'), false); });
             dropzone.addEventListener('drop', (e) => handleFileSelect(e.dataTransfer.files), false);
         }
+
+        window.addEventListener('hashchange', updateGenerateButtonState);
+        updateGenerateButtonState();
 
         isEditorInitialized = true;
     }
