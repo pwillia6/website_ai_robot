@@ -211,7 +211,25 @@ class GeminiService {
                 $modified_files_data = json_decode($modified_files_json, true);
 
                 if (json_last_error() !== JSON_ERROR_NONE || !isset($modified_files_data['modified_files'])) {
-                    throw new Exception("Failed to decode or invalid diff JSON from API: " . $modified_files_json);
+                    // Fallback: model returned markdown code fences instead of the JSON schema.
+                    // Extract fenced blocks and pair them with input files by position.
+                    $constructed_files = [];
+                    if (preg_match_all('/```\w*\s*\n(.*?)```/s', $modified_files_json, $fence_blocks)) {
+                        foreach ($fence_blocks[1] as $idx => $block_content) {
+                            if (isset($files[$idx])) {
+                                $constructed_files[] = [
+                                    'filename'       => $files[$idx]['path'],
+                                    $content_property => trim($block_content)
+                                ];
+                            }
+                        }
+                    }
+
+                    if (!empty($constructed_files)) {
+                        $modified_files_data = ['modified_files' => $constructed_files];
+                    } else {
+                        throw new Exception("Failed to decode or invalid diff JSON from API: " . $modified_files_json);
+                    }
                 }
 
                 $usage = isset($result['usage']) ? $result['usage'] : [];
